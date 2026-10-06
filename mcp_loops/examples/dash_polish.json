@@ -1,0 +1,49 @@
+{
+  "name": "dash-polish",
+  "goal": "Make the metric dashboard trustworthy and demo-ready: every company metric shows a number-first card with honesty-as-annotation, a real historical trend, and correct percentage formatting. Done = the owner can open /dashboard on the stand and see numbers + trends that match the backend, with no page showing a bare caveat where a value exists.",
+  "substrate": "headless",
+  "contextCaps": { "default": 200000, "manager": 400000 },
+  "budget": {
+    "turnLimit": 48,
+    "managerFinalizeSteps": 4,
+    "minorOnlyExtraSteps": 2,
+    "minorSkipThreshold": 0.30
+  },
+  "humanInLoop": { "owner": "tim", "via": "manager" },
+  "steps": {
+    "boss": {
+      "type": "agent",
+      "role": "manager",
+      "personality": "A calm, decisive tech lead who keeps a tight written status and never loses the north star. Turns critic findings into small, ordered worker tasks. Asks the owner only when a real product decision is at stake.",
+      "goal": "Hold the goal, keep a lean done/to-do status, convert input-provider findings into concrete worker tasks, decide when the dashboard is trustworthy enough to finish."
+    },
+    "builder": {
+      "type": "agent",
+      "role": "worker",
+      "personality": "A pragmatic React/TS engineer who ships the smallest correct change and keeps vitest green.",
+      "goal": "Implement the dashboard tasks the manager assigns: number-first cards, honesty badges, % formatting, trend wiring.",
+      "maxRepeatTurns": 3
+    },
+    "data_worker": {
+      "type": "agent",
+      "role": "worker",
+      "personality": "A backend engineer comfortable with SQL over raw sources and the metric-core read APIs.",
+      "goal": "Provide the historical weekly series the trend needs and keep the honour DATA layer honest."
+    },
+    "ui_critic": {
+      "type": "agent",
+      "role": "input_provider",
+      "personality": "A relentless QA who trusts nothing until a real headless browser shows it. Adds Playwright freely, mints a stand token, and reads the actual rendered pixels.",
+      "goal": "Open the real dashboard on the stand with a real session and confirm each card shows a NUMBER (not a bare caveat), trends render, and values match the backend. Report exactly what is still wrong.",
+      "tools": ["playwright", "curl"]
+    },
+    "api_critic": {
+      "type": "agent",
+      "role": "input_provider",
+      "personality": "A precise API tester who checks the BFF proxies and honour verdicts directly.",
+      "goal": "Verify every dashboard card's value against the measure endpoint and confirm the honour verdict is honest; report mismatches.",
+      "tools": ["curl"]
+    }
+  },
+  "stepOrder": ["boss", "builder", "data_worker", "ui_critic", "api_critic"]
+}

@@ -1,0 +1,21 @@
+#!/usr/bin/env python3
+"""yard — Loopyard host CLI (executable shim).
+
+Thin launcher so `yard` runs as a real binary on the box. It resolves its own
+real path (following the ~/.local/bin symlink an install drops), puts the repo
+root on sys.path, and hands off to mcp_loops.yard. See that module for usage.
+"""
+import os
+import sys
+
+# Follow symlinks: an install symlinks ~/.local/bin/yard -> <repo>/bin/yard, so
+# __file__ alone would point at ~/.local/bin. realpath gets us the real repo.
+_HERE = os.path.dirname(os.path.realpath(__file__))
+_REPO = os.path.dirname(_HERE)  # bin/ sits at the repo root
+if _REPO not in sys.path:
+    sys.path.insert(0, _REPO)
+
+from mcp_loops.yard import main  # noqa: E402
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))

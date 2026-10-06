@@ -1,0 +1,88 @@
+/* Shared primitives. Views compose these; extend here rather than copying CSS. */
+
+/* ── tags ── Pill = static label, Chip = filter/toggle. Both quiet by default. */
+.pill { display: inline-flex; align-items: center; gap: var(--sp-1); font-family: var(--sans); font-size: var(--fs-2xs); font-weight: var(--fw-medium);
+  line-height: 18px; padding: 0 var(--sp-2); border-radius: var(--r-xs); background: var(--surface-3); color: var(--text-2); white-space: nowrap; }
+.pill.ember { background: var(--ember-tint); color: var(--ember-soft); }
+.pill.phos, .pill.ok { background: var(--ok-tint); color: var(--ok); }
+.pill.rose, .pill.bad { background: var(--bad-tint); color: var(--bad); }
+.pill.warn { background: var(--warn-tint); color: var(--warn); }
+
+.chip { display: inline-flex; align-items: center; gap: 6px; font-family: var(--sans); font-size: var(--fs-xs); font-weight: var(--fw-medium);
+  height: 28px; padding: 0 var(--sp-3); border-radius: var(--r-pill); background: transparent; color: var(--text-2);
+  border: 1px solid var(--line-strong); white-space: nowrap; }
+button.chip { cursor: pointer; transition: background var(--dur) var(--ease), color var(--dur) var(--ease); }
+button.chip:hover { background: var(--hover); color: var(--text); }
+.chip.on { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+/* ── surfaces ── */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: var(--sp-5); min-width: 0; }
+.card.flush { padding: 0; overflow: hidden; }
+a.card, button.card { display: block; text-align: left; color: inherit; text-decoration: none; cursor: pointer; font: inherit;
+  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease); }
+a.card:hover, button.card:hover { border-color: var(--line-strong); background: var(--surface-2); }
+
+/* ── page frame ── */
+.page { padding: var(--sp-8) var(--sp-8) var(--sp-16); max-width: var(--w-page); margin: 0 auto; }
+.pagehead { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--sp-4); margin-bottom: var(--sp-6); flex-wrap: wrap; }
+.pagehead .sub { margin-top: var(--sp-1); }
+.pageactions { display: flex; gap: var(--sp-2); flex-wrap: wrap; align-items: center; }
+.section { margin-top: var(--sp-8); }
+.section-h { display: flex; align-items: baseline; gap: var(--sp-2); margin: 0 0 var(--sp-3); font-family: var(--machine); font-size: var(--fs-sm); font-weight: var(--fw-bold); color: var(--text); }
+.section-h .count { font-size: var(--fs-xs); color: var(--text-3); font-weight: var(--fw-bold); }
+.section-h .spacer { margin-left: auto; }
+@media (max-width: 760px) { .page { padding: var(--sp-5) var(--sp-4) var(--sp-12); } }
+
+/* ── list rows (Notion-ish: flat, hover-lit) ── */
+.rows { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; background: var(--surface); }
+.row { display: flex; align-items: center; gap: var(--sp-3); min-height: 44px; padding: var(--sp-2) var(--sp-4); color: inherit; text-decoration: none;
+  background: none; border: 0; border-top: 1px solid var(--line); width: 100%; text-align: left; font: inherit; cursor: pointer; }
+.row:first-child { border-top: 0; }
+.row:hover { background: var(--hover); }
+.row .grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row .end { margin-left: auto; color: var(--text-3); font-size: var(--fs-xs); white-space: nowrap; }
+
+/* ── search ── */
+.searchbox { display: flex; align-items: center; gap: var(--sp-2); height: 34px; padding: 0 var(--sp-3); margin-bottom: var(--sp-3);
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-sm); }
+.searchbox:focus-within { border-color: var(--text-3); }
+.searchbox input { flex: 1; min-width: 0; background: none; border: 0; outline: none; font-size: var(--fs-sm); }
+.searchbox input::placeholder { color: var(--text-4); }
+.sglyph { color: var(--text-4); }
+.sclear { background: none; border: 0; color: var(--text-3); cursor: pointer; font-size: var(--fs-md); line-height: 1; }
+
+/* ── form fields ── */
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field > label, .field-label { font-size: var(--fs-xs); font-weight: var(--fw-medium); color: var(--text-2); }
+.field-hint { font-size: var(--fs-xs); color: var(--text-3); }
+.input, .textarea, .select { width: 100%; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-sm);
+  padding: var(--sp-2) var(--sp-3); font-size: var(--fs-sm); color: var(--text); outline: none; }
+.input:focus, .textarea:focus, .select:focus { border-color: var(--text-3); }
+.textarea { resize: vertical; line-height: var(--lh); }
+
+/* ── skeleton ── */
+.sk { display: flex; flex-direction: column; gap: var(--sp-3); }
+.sk-line, .sk-block { border-radius: var(--r-xs); background: linear-gradient(90deg, var(--surface) 0%, var(--surface-3) 50%, var(--surface) 100%);
+  background-size: 200% 100%; animation: sk-shimmer 1.4s ease-in-out infinite; }
+.sk-line { height: 12px; }
+.sk-block { border-radius: var(--r-lg); }
+@keyframes sk-shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+@media (prefers-reduced-motion: reduce) { .sk-line, .sk-block { animation: none; } }
+.sk-page { padding: var(--sp-8); max-width: var(--w-read); }
+.sk-cards { display: flex; flex-direction: column; gap: var(--sp-2); }
+
+/* ── Intro: a one-line explainer, dismissible once understood ── */
+.intro { display: flex; align-items: flex-start; gap: var(--sp-3); margin: 0 0 var(--sp-6); max-width: var(--w-read);
+  padding: var(--sp-3) var(--sp-4); border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); }
+.intro .intro-text { margin: 0; flex: 1; min-width: 0; color: var(--text-2); font-size: var(--fs-sm); line-height: var(--lh); }
+.intro .intro-text b { color: var(--text); font-weight: var(--fw-semi); }
+.intro-x { flex: none; background: none; border: 0; padding: 2px; margin: -2px -4px 0 0; color: var(--text-3); cursor: pointer; border-radius: var(--r-xs); line-height: 0; }
+.intro-x:hover { color: var(--text); background: var(--hover); }
+.intro-ico { flex: none; color: var(--ember-soft); line-height: 0; margin-top: 2px; }
+
+/* ── tooltip-ish inline "?" ── */
+.hint { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; font-size: var(--fs-2xs); font-weight: var(--fw-semi);
+  color: var(--text-3); border: 1px solid var(--line-strong); cursor: help; vertical-align: middle; }
+
+/* ── NEW dot: a feature the user hasn't opened yet ── */
+.newdot { width: 6px; height: 6px; border-radius: 50%; background: var(--ember); flex: none; box-shadow: 0 0 0 3px var(--ember-tint); }

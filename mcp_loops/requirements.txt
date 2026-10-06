@@ -1,0 +1,13 @@
+# Loopyard (mcp_loops) runtime deps — the MCP server + CLI shim only.
+#
+# These are the ONLY third-party imports across mcp_loops/*.py: `mcp` (FastMCP
+# streamable-HTTP server + client; starlette/uvicorn come transitively) and
+# `httpx` (the sync client transport). Deliberately lean — the heavy worker
+# daemon deps (telethon/autogen/…) live in worker/pyproject.toml and are NOT
+# needed to bring the loops server up and drive it.
+#
+# `mcp` is pinned <2: the 1.x line is what's verified against this code (FastMCP
+# custom_route, streamable-http, the CallToolResult shape client.py parses); a
+# 2.0 could churn that API. 1.28 is the verified floor.
+mcp>=1.28,<2
+httpx>=0.27,<1

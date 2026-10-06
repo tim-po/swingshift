@@ -1,0 +1,16 @@
+Vendored terminal front-end assets (QoL R4 / T2 — web Terminal surface).
+
+Served SAME-ORIGIN from /static/vendor/xterm/ by tracking_ui (app.py StaticFiles
+mount). NO CDN / external host — the dashboard CSP forbids external asset fetches,
+so these are committed to the repo and shipped in the Loopyard release artifact.
+
+Provenance (obtained with `npm pack`, official npm registry, unmodified dist):
+  xterm.js       @xterm/xterm     5.5.0   (lib/xterm.js — UMD build, exposes window.Terminal)
+  xterm.css      @xterm/xterm     5.5.0   (css/xterm.css)
+  addon-fit.js   @xterm/addon-fit 0.10.0  (lib/addon-fit.js — UMD, exposes window.FitAddon.FitAddon)
+
+CSP note: the UMD builds contain no eval() / new Function() (verified), so no
+'unsafe-eval' is required. The SPA loads them via same-origin <script src>/<link>.
+
+To refresh a version: `npm pack @xterm/xterm@<v> @xterm/addon-fit@<v>`, extract, and
+copy lib/xterm.js, css/xterm.css, lib/addon-fit.js here; update the versions above.

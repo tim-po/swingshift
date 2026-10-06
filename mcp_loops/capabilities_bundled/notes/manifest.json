@@ -1,0 +1,35 @@
+{
+  "id": "notes",
+  "name": "Notes",
+  "version": "1",
+  "entityKinds": ["note"],
+  "dataDir": "notes",
+  "page": { "kind": "html", "asset": "page.html" },
+  "settings": {},
+  "attachedLoop": {
+    "title": "Summarize notes",
+    "config": {
+      "name": "cap-notes",
+      "goal": "Summarize the project's captured notes into one short digest and write it back as a note. The specific project and current notes are provided in the context below.",
+      "budget": { "turnLimit": 6 },
+      "steps": {
+        "manager": {
+          "role": "manager",
+          "personality": "A tight orchestrator who drives the loop to its stated goal and gates a one-turn wind-down once the deliverable is real.",
+          "goal": "Drive the loop to the goal it was given; verify the writer produced the deliverable with evidence before finishing."
+        },
+        "writer": {
+          "role": "worker",
+          "personality": "A concise writer who turns the provided material into a short, faithful summary.",
+          "goal": "Produce the deliverable the loop goal describes from the material in the goal context; keep it short and faithful."
+        },
+        "checker": {
+          "role": "input_provider",
+          "personality": "A checker who confirms the deliverable exists and matches the source material, never eyeballing.",
+          "goal": "Verify the writer's deliverable against the loop goal and the provided material."
+        }
+      },
+      "stepOrder": ["manager", "writer", "checker"]
+    }
+  }
+}

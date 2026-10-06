@@ -1,0 +1,8 @@
+/* Shared PTY surface + status dot (Terminal view + creator briefing terminal). */
+.xt-stat { display: inline-flex; align-items: center; gap: var(--sp-2); font-weight: var(--fw-semi); font-size: var(--fs-sm); white-space: nowrap; }
+.xt-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--stone); transition: background .15s; flex: none; }
+.xt-stat.on .xt-dot { background: var(--phos); }
+.xt-stat.off .xt-dot { background: var(--ember-deep); }
+.xt-stat.wait .xt-dot { background: var(--ember-soft); }
+.xt-wrap { flex: 1; min-height: 0; min-width: 0; background: var(--ink); padding: 8px 10px; overflow: hidden; }
+.xt-host { width: 100%; height: 100%; }

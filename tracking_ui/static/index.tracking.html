@@ -1,0 +1,2175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loopyard · Tracking</title>
+<meta name="theme-color" content="#17130D">
+<meta name="description" content="Loopyard — your agents, your compute, your keys. Our loops.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%2317130D'/><rect x='12' y='19' width='40' height='26' rx='13' fill='none' stroke='%23FF6A2B' stroke-width='5' stroke-linecap='round'/><circle cx='49' cy='32' r='5' fill='%2346E0A0'/></svg>">
+<style>
+  :root{
+    /* ---- color · light mint / white / silver ---- */
+    --bg:#eef2f1; --bg2:#f6f9f8;
+    --panel:#ffffff; --panel2:#f4f7f6; --panel3:#eaefed;
+    --line:#e3e9e7; --line2:#d3dbd8;
+    --fg:#17211d; --mut:#5c6b64; --sub:#93a09a;
+    --accent:#10b981; --accent-h:#0ea371; --accent-strong:#059669;
+    --accent-dim:rgba(16,185,129,.12); --accent-ring:rgba(16,185,129,.32);
+    --ok:#059669; --bad:#dc2626; --warn:#d97706; --purple:#7c3aed; --info:#0ea5b7;
+    /* ---- spacing scale ---- */
+    --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px;
+    /* ---- radius ---- */
+    --r1:6px; --r2:8px; --r3:10px; --r4:14px; --rp:999px;
+    /* ---- elevation (soft, light theme) ---- */
+    --sh1:0 1px 2px rgba(16,40,30,.06);
+    --sh2:0 14px 40px rgba(16,40,30,.16);
+    --shcard:0 1px 2px rgba(16,40,30,.05), 0 1px 3px rgba(16,40,30,.04);
+  }
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{ margin:0; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+        font:15px/1.5 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+        background:
+          radial-gradient(1100px 620px at 100% -10%, rgba(16,185,129,.08), transparent 60%),
+          radial-gradient(900px 500px at -5% 0%, rgba(16,185,129,.05), transparent 55%),
+          var(--bg);
+        color:var(--fg); }
+
+  /* ===================== app shell ===================== */
+  .shell{ display:flex; min-height:100vh; }
+
+  /* ---- sidebar ---- */
+  .sidebar{ width:238px; flex:none; background:var(--panel); border-right:1px solid var(--line);
+            display:flex; flex-direction:column; padding:18px 14px; position:sticky; top:0;
+            height:100vh; z-index:60; }
+  body:not(.authed) .sidebar{ display:none; }
+  .brand{ display:flex; align-items:center; gap:11px; padding:6px 8px 4px; min-width:0; }
+  .brand .logo{ width:34px; height:34px; border-radius:10px; flex:none;
+                background:linear-gradient(150deg,var(--accent),#34d399);
+                box-shadow:0 4px 12px rgba(16,185,129,.35), inset 0 0 0 1px rgba(255,255,255,.35);
+                display:grid; place-items:center; }
+  .brand .logo svg{ width:19px; height:19px; display:block; }
+  .brand .wm{ display:flex; flex-direction:column; line-height:1.1; min-width:0; }
+  .brand .wm b{ font-size:16px; font-weight:750; letter-spacing:-.01em; }
+  .brand .wm span{ font-size:11px; color:var(--mut); }
+
+  .nav{ display:flex; flex-direction:column; gap:3px; margin-top:20px; }
+  .nav .navlabel{ font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--sub);
+                  font-weight:700; padding:0 10px; margin:0 0 6px; }
+  .nav .navitem{ display:flex; align-items:center; gap:12px; text-align:left; width:100%;
+        padding:10px 12px; background:transparent; border:1px solid transparent;
+        border-radius:var(--r3); cursor:pointer; color:var(--mut); font:inherit;
+        transition:color .14s, background .14s; }
+  .nav .navitem:hover{ background:var(--panel2); color:var(--fg); }
+  .nav .navitem .nic{ font-size:18px; line-height:1; flex:none; width:22px; text-align:center; }
+  .nav .navitem .ntt{ font-weight:600; font-size:14.5px; }
+  .nav .navitem.active{ background:var(--accent-dim); color:var(--accent-strong);
+        border-color:rgba(16,185,129,.28); box-shadow:inset 3px 0 0 var(--accent) , var(--sh1); }
+  .nav .navitem.active .ntt{ font-weight:700; }
+  .nav .navitem:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .sidebar .sfoot{ margin-top:auto; padding:10px 8px 2px; border-top:1px solid var(--line);
+                   font-size:11px; color:var(--sub); }
+
+  /* ---- content column ---- */
+  .content{ flex:1; min-width:0; display:flex; flex-direction:column; }
+  .topbar{ display:flex; align-items:center; gap:var(--s3); padding:12px 22px;
+           border-bottom:1px solid var(--line); background:rgba(246,249,248,.86);
+           backdrop-filter:saturate(140%) blur(8px); position:sticky; top:0; z-index:40; }
+  body:not(.authed) .topbar{ display:none; }
+  .topbar .sp{ flex:1; }
+  .menu-btn{ display:none; background:var(--panel); border:1px solid var(--line); color:var(--fg);
+             width:38px; height:38px; padding:0; border-radius:var(--r2); font-size:17px;
+             align-items:center; justify-content:center; }
+  .slugchip{ font-size:12px; color:var(--mut); background:var(--panel); font-weight:550;
+             border:1px solid var(--line); border-radius:var(--rp); padding:5px 12px;
+             display:inline-flex; align-items:center; gap:7px; max-width:42vw;
+             overflow:hidden; text-overflow:ellipsis; white-space:nowrap; box-shadow:var(--sh1); }
+  .slugchip::before{ content:""; width:7px; height:7px; border-radius:50%;
+                     background:var(--ok); box-shadow:0 0 0 3px rgba(5,150,105,.16); flex:none; }
+
+  /* scrim for mobile drawer */
+  .scrim{ position:fixed; inset:0; background:rgba(16,32,26,.42); z-index:55; display:none; }
+  .scrim.show{ display:block; }
+
+  main{ max-width:1040px; width:100%; margin:0 auto; padding:var(--s5) var(--s5) 80px;
+        transition:max-width .16s ease; }
+  main.wide{ max-width:1320px; }
+
+  /* ===================== typography ===================== */
+  h2{ font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--mut);
+      font-weight:700; margin:0 0 var(--s3); }
+  .view-header{ margin:2px 0 var(--s5); }
+  .view-header h1{ font-size:22px; font-weight:750; letter-spacing:-.02em; margin:0 0 5px;
+                   display:flex; align-items:center; gap:10px; }
+  .view-header h1 .vi{ font-size:21px; }
+  .view-header p{ margin:0; color:var(--mut); font-size:14px; max-width:70ch; }
+  .section-desc{ color:var(--mut); font-size:12.5px; margin:-4px 0 12px; max-width:78ch; }
+  .muted{ color:var(--mut); }
+  code{ background:var(--panel2); border:1px solid var(--line); border-radius:5px;
+        padding:1px 5px; font-size:.86em; }
+  hr.div{ border:none; border-top:1px solid var(--line); margin:var(--s4) 0; }
+
+  /* ===================== cards ===================== */
+  .card{ background:var(--panel); border:1px solid var(--line); border-radius:var(--r4);
+         padding:var(--s5); margin-bottom:var(--s4); box-shadow:var(--shcard); }
+  .card-head{ display:flex; align-items:center; gap:var(--s3); margin-bottom:var(--s3); }
+  .card-head h2{ margin:0; }
+  .card-head .sp{ flex:1; }
+
+  /* ===================== forms ===================== */
+  label{ display:block; font-size:12.5px; color:var(--mut); margin:var(--s3) 0 4px;
+         font-weight:600; }
+  input[type=text], input[type=search], select, textarea{
+    width:100%; padding:9px 11px; background:var(--panel); border:1px solid var(--line2);
+    color:var(--fg); border-radius:var(--r2); font-size:14px; font-family:inherit;
+    transition:border-color .14s, box-shadow .14s; }
+  input:focus, select:focus, textarea:focus{ outline:none; border-color:var(--accent);
+    box-shadow:0 0 0 3px var(--accent-ring); }
+  input::placeholder{ color:var(--sub); }
+  .row{ display:flex; gap:var(--s2); align-items:center; flex-wrap:wrap; }
+  .radios{ display:inline-flex; gap:2px; flex-wrap:wrap; background:var(--panel2);
+           border:1px solid var(--line); border-radius:var(--r2); padding:3px; }
+  .radios label{ display:flex; align-items:center; gap:6px; margin:0; color:var(--mut);
+                 cursor:pointer; padding:6px 12px; border-radius:6px; font-weight:600;
+                 font-size:13px; transition:background .14s,color .14s; }
+  .radios label:hover{ color:var(--fg); }
+  .radios input{ accent-color:var(--accent); }
+
+  /* ---- toggle switch (iOS-style) ---- */
+  .tgl{ position:relative; display:inline-flex; flex:none; width:38px; height:22px; vertical-align:middle; }
+  .tgl input{ position:absolute; inset:0; width:100%; height:100%; margin:0; opacity:0;
+              cursor:pointer; z-index:2; }
+  .tgl .tsl{ position:absolute; inset:0; background:var(--line2); border-radius:var(--rp);
+             transition:background .18s ease; }
+  .tgl .tsl::after{ content:""; position:absolute; top:2px; left:2px; width:18px; height:18px;
+             background:#fff; border-radius:50%; box-shadow:0 1px 2px rgba(0,0,0,.28);
+             transition:transform .18s ease; }
+  .tgl input:checked + .tsl{ background:var(--accent); }
+  .tgl input:checked + .tsl::after{ transform:translateX(16px); }
+  .tgl input:focus-visible + .tsl{ box-shadow:0 0 0 3px var(--accent-ring); }
+  .tgl input:disabled{ cursor:not-allowed; }
+  .tgl input:disabled + .tsl{ opacity:.4; }
+  .tgl.cl input:checked + .tsl{ background:var(--ok); }
+  .tgl.dr input:checked + .tsl{ background:var(--warn); }
+  .fieldtoggle{ display:inline-flex; align-items:center; gap:10px; margin:var(--s2) 0 0;
+                cursor:pointer; color:var(--fg); font-weight:600; font-size:14px; }
+
+  /* ===================== buttons ===================== */
+  button{ cursor:pointer; border:1px solid var(--line2); background:var(--panel);
+          color:var(--fg); padding:8px 14px; border-radius:var(--r2); font-size:14px;
+          font-family:inherit; font-weight:600; transition:background .14s, border-color .14s,
+          box-shadow .14s, opacity .14s, transform .05s; }
+  button:hover{ background:var(--panel2); border-color:var(--sub); }
+  button:active{ transform:translateY(1px); }
+  button:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  button.primary{ background:var(--accent-strong); border-color:var(--accent-strong); color:#fff;
+                  box-shadow:0 2px 8px rgba(5,150,105,.28); }
+  button.primary:hover{ background:var(--accent-h); border-color:var(--accent-h); }
+  button.ok{ border-color:rgba(5,150,105,.45); color:var(--ok); background:rgba(5,150,105,.08); }
+  button.ok:hover{ background:rgba(5,150,105,.16); border-color:var(--ok); }
+  button.bad{ border-color:rgba(220,38,38,.4); color:var(--bad); background:rgba(220,38,38,.06); }
+  button.bad:hover{ background:rgba(220,38,38,.13); border-color:var(--bad); }
+  button:disabled{ opacity:.45; cursor:default; transform:none; }
+  button.sm{ padding:4px 10px; font-size:12px; border-radius:var(--r1); font-weight:600; }
+
+  /* ===================== gate ===================== */
+  .gate{ max-width:440px; margin:56px auto; }
+  .gate .logo-lg{ width:46px; height:46px; border-radius:13px; margin-bottom:var(--s3);
+     background:linear-gradient(150deg,var(--accent),#34d399); display:grid; place-items:center;
+     box-shadow:0 6px 18px rgba(16,185,129,.35), inset 0 0 0 1px rgba(255,255,255,.35); }
+  .gate .logo-lg svg{ width:25px; height:25px; }
+  .gate h2{ font-size:19px; text-transform:none; letter-spacing:-.01em; color:var(--fg); margin-bottom:6px; }
+
+  /* ===================== chats list ===================== */
+  .chatlist{ max-height:380px; overflow:auto; border:1px solid var(--line);
+             border-radius:var(--r3); margin-top:var(--s2); background:var(--bg2); }
+  .chat{ display:flex; align-items:center; gap:12px; padding:11px 14px;
+         border-bottom:1px solid var(--line); flex-wrap:wrap; }
+  .chat:hover{ background:var(--panel); }
+  .chat:last-child{ border-bottom:none; }
+  .chat .chatmain{ flex:1; min-width:150px; display:flex; flex-direction:column; gap:1px; }
+  .chat .title{ font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .chat .meta{ color:var(--mut); font-size:11.5px; }
+  .chatctl{ display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
+  .mini{ display:inline-flex; align-items:center; gap:7px; font-size:11px; font-weight:700;
+         color:var(--mut); cursor:pointer; text-transform:uppercase; letter-spacing:.03em; }
+  .mini.rt span:first-child{ color:var(--accent); }
+  .mini.cl span:first-child{ color:var(--ok); }
+  .mini.dr span:first-child{ color:var(--warn); }
+  .pill{ font-size:11px; padding:2px 9px; border-radius:var(--rp); border:1px solid var(--line);
+         color:var(--mut); display:inline-flex; align-items:center; gap:5px; font-weight:600; }
+  .pill.rt{ color:var(--accent); border-color:var(--accent); }
+  .pill.cl{ color:var(--ok); border-color:rgba(5,150,105,.5); background:rgba(5,150,105,.07); }
+  .pill.dr{ color:var(--warn); border-color:var(--warn); }
+
+  /* legend for chat toggles */
+  .legend{ font-size:12px; color:var(--mut); background:var(--bg2); border:1px solid var(--line);
+           border-radius:var(--r2); padding:10px 12px; margin-top:var(--s3); line-height:1.65; }
+  .legend b.rt{ color:var(--accent); } .legend b.cl{ color:var(--ok); } .legend b.dr{ color:var(--warn); }
+
+  /* ===================== items ===================== */
+  .item{ border:1px solid var(--line); border-radius:var(--r3); padding:var(--s4);
+         margin-bottom:var(--s3); background:var(--panel); box-shadow:var(--sh1); }
+  .item .top{ display:flex; gap:8px; align-items:baseline; margin-bottom:6px; }
+  .item .chat-title{ font-weight:700; }
+  .item .ts{ color:var(--mut); font-size:12px; margin-left:auto; }
+  .item .body{ margin:6px 0; white-space:pre-wrap; }
+  .item .ctx{ background:var(--bg2); border:1px solid var(--line); border-radius:var(--r1);
+              padding:8px 10px; margin:4px 0; max-height:240px; overflow-y:auto; }
+  .item .cmsg{ font-size:13px; margin:3px 0; white-space:pre-wrap; }
+  .item .cmsg .cwho{ color:var(--mut); font-weight:700; margin-right:5px; }
+  .item .cmsg.me{ text-align:right; color:var(--accent-strong); }
+  .item .cmsg.me .cwho{ color:var(--accent); }
+  .item .dlabel{ font-size:11px; text-transform:uppercase; letter-spacing:.04em; margin:8px 0 3px; }
+  .item .draft{ background:var(--bg2); border-left:3px solid var(--accent); padding:8px 10px; border-radius:4px; }
+  .item .draftEdit{ width:100%; min-height:60px; resize:vertical; background:var(--bg2);
+                    border:1px solid var(--line); border-left:3px solid var(--accent);
+                    color:var(--fg); border-radius:var(--r1); padding:8px 10px; font:inherit;
+                    line-height:1.5; }
+  .item .draftEdit:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-ring); }
+  .item .status{ font-size:12px; color:var(--mut); margin-top:8px; }
+  .item .status b{ color:var(--fg); font-weight:700; }
+  .item .acts{ margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; }
+
+  /* ===================== events agenda ===================== */
+  .agenda-group{ margin-bottom:var(--s5); }
+  .agenda-head{ display:flex; align-items:center; gap:11px; margin:0 0 12px; }
+  .agenda-head .gt{ font-size:13px; font-weight:750; letter-spacing:-.01em; color:var(--fg);
+                    text-transform:uppercase; letter-spacing:.05em; }
+  .agenda-head .gc{ background:var(--panel); border:1px solid var(--line); border-radius:var(--rp);
+                    padding:1px 9px; font-size:12px; color:var(--mut); font-weight:700; }
+  .agenda-head .gline{ flex:1; height:1px; background:var(--line); }
+
+  .evt{ display:flex; gap:var(--s4); padding:var(--s4) var(--s4) var(--s4) 0; margin-bottom:10px;
+        background:var(--panel); border:1px solid var(--line); border-radius:var(--r4);
+        box-shadow:var(--shcard); position:relative; overflow:hidden;
+        transition:border-color .14s, box-shadow .14s; }
+  .evt:hover{ border-color:var(--line2); box-shadow:var(--sh1), 0 8px 24px rgba(16,40,30,.07); }
+  .evt::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--accent); }
+  .evt.done::before{ background:var(--ok); }
+  .evt.dismissed::before{ background:var(--bad); }
+  .evt.past::before{ background:var(--line2); }
+  .evt-rail{ flex:none; width:84px; display:flex; flex-direction:column; align-items:flex-start;
+             gap:2px; padding-left:16px; border-right:1px solid var(--line); }
+  .evt-time{ font-size:18px; font-weight:800; letter-spacing:-.02em; color:var(--fg); }
+  .evt-dur{ font-size:11px; color:var(--mut); font-weight:600; }
+  .evt-date{ font-size:11px; color:var(--sub); font-weight:600; }
+  .evt-body{ flex:1; min-width:0; }
+  .evt-head{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .evt-title{ font-weight:700; font-size:15px; letter-spacing:-.01em; }
+  .evt-status{ font-size:10.5px; padding:2px 8px; border-radius:var(--rp); border:1px solid var(--line);
+               text-transform:uppercase; letter-spacing:.04em; font-weight:700; color:var(--mut); }
+  .evt-status.ok{ color:var(--ok); border-color:rgba(5,150,105,.5); background:rgba(5,150,105,.07); }
+  .evt-status.bad{ color:var(--bad); border-color:var(--bad); }
+  .evt-status.warn{ color:var(--warn); border-color:var(--warn); }
+  .evt-meta{ color:var(--mut); font-size:13px; margin-top:6px; display:flex; gap:16px; flex-wrap:wrap; }
+  .evt-meta .mi{ display:inline-flex; align-items:center; gap:5px; min-width:0; max-width:100%;
+                 overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .evt-meta .mi a{ color:var(--accent-strong); }
+  .evt-note{ font-size:12px; color:var(--mut); margin-top:7px; }
+  .evt-from{ font-size:11.5px; color:var(--sub); margin-top:7px; }
+  .evt .acts{ margin-top:11px; display:flex; gap:8px; flex-wrap:wrap; }
+  .evt .status{ font-size:12px; color:var(--mut); margin-top:8px; }
+  .evt .status b{ color:var(--fg); font-weight:700; }
+  @media (max-width:820px){
+    .evt-rail{ width:70px; padding-left:12px; }
+  }
+
+  /* ===================== toast ===================== */
+  .toast{ position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(8px);
+          background:var(--fg); color:#fff; border:1px solid rgba(255,255,255,.1); padding:11px 18px;
+          border-radius:var(--r3); max-width:90%; box-shadow:var(--sh2); display:none;
+          font-size:14px; font-weight:500; z-index:80; }
+
+  .hide{ display:none !important; }
+
+  /* ===================== core snapshot counts ===================== */
+  .corecounts{ gap:10px; }
+  .count{ display:flex; flex-direction:column; align-items:center; min-width:74px;
+          padding:11px 15px; background:var(--panel2); border:1px solid var(--line);
+          border-radius:var(--r3); }
+  .count .n{ font-size:23px; font-weight:800; letter-spacing:-.02em; }
+  .count .k{ font-size:10.5px; color:var(--mut); text-transform:uppercase; letter-spacing:.05em; margin-top:2px; }
+
+  /* ===================== badges ===================== */
+  .badge{ font-size:10.5px; padding:2px 8px; border-radius:var(--rp); border:1px solid var(--line);
+          text-transform:uppercase; letter-spacing:.04em; font-weight:700; }
+  .badge.task{ color:var(--accent-strong); border-color:rgba(5,150,105,.5); }
+  .badge.event{ color:var(--warn); border-color:var(--warn); }
+  .badge.artifact{ color:var(--purple); border-color:var(--purple); }
+  .badge.worker{ color:var(--ok); border-color:var(--ok); }
+  .badge.human{ color:var(--info); border-color:var(--info); }
+  .badge.ai{ color:var(--purple); border-color:var(--purple); }
+  .badge.owner{ color:var(--warn); border-color:var(--warn); }
+  .badge.admin{ color:var(--ok); border-color:var(--ok); }
+  .badge.member{ color:var(--mut); border-color:var(--line2); }
+  .badge.inactive{ color:var(--bad); border-color:var(--bad); }
+  .badge.proposed{ color:var(--warn); border-color:var(--warn); }
+  .badge.confirmed{ color:var(--ok); border-color:var(--ok); }
+  .badge.rejected{ color:var(--bad); border-color:var(--bad); }
+
+  /* ===================== tag / entity rows ===================== */
+  .tagrow, .entrow{ display:flex; align-items:center; gap:8px; padding:10px 12px;
+                    border:1px solid var(--line); border-radius:var(--r2); margin-bottom:6px;
+                    background:var(--panel); cursor:pointer; transition:border-color .14s, background .14s; }
+  .tagrow:hover, .entrow:hover{ border-color:var(--accent); background:var(--panel2); }
+  .tagrow .name, .entrow .lbl{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .metacontent{ background:var(--bg2); border:1px solid var(--line); border-radius:var(--r1);
+                padding:9px 11px; margin-top:6px; white-space:pre-wrap; font-size:13px;
+                max-height:320px; overflow:auto; }
+  .kv{ font-size:13px; margin:2px 0; }
+  .kv b{ color:var(--mut); font-weight:700; }
+  .deprow{ padding:7px 0; font-size:13px; border-bottom:1px solid var(--line); }
+  .deprow:last-child{ border-bottom:none; }
+
+  /* ===================== agile board ===================== */
+  .subtabs{ display:inline-flex; gap:2px; margin-bottom:var(--s4); background:var(--panel2);
+            border:1px solid var(--line); border-radius:var(--r2); padding:3px; }
+  .subtabs button{ border:none; background:transparent; color:var(--mut); padding:7px 16px;
+                   border-radius:6px; font-weight:600; box-shadow:none; }
+  .subtabs button:hover{ background:var(--panel3); color:var(--fg); }
+  .subtabs button.active{ background:var(--accent-strong); border-color:var(--accent-strong); color:#fff; }
+  .board{ display:flex; gap:var(--s3); align-items:flex-start; }
+  .col{ flex:1 1 0; min-width:0; background:var(--panel2); border:1px solid var(--line);
+        border-radius:var(--r4); padding:13px; }
+  .colhead{ display:flex; align-items:center; gap:8px; margin:0 0 12px; font-size:12px;
+            text-transform:uppercase; letter-spacing:.06em; color:var(--mut); font-weight:700; }
+  .colhead .cnt{ margin-left:auto; background:var(--panel); border:1px solid var(--line);
+                 border-radius:var(--rp); padding:1px 9px; font-size:12px; color:var(--fg); font-weight:700; }
+  .cards{ min-height:44px; display:flex; flex-direction:column; }
+  .cards.dragover{ outline:2px dashed var(--accent); outline-offset:2px; border-radius:var(--r2);
+                   background:var(--accent-dim); }
+  .empty{ color:var(--sub); font-size:13px; text-align:center; padding:22px 8px;
+          border:1px dashed var(--line2); border-radius:var(--r2); }
+  .tcard{ background:var(--panel); border:1px solid var(--line); border-radius:var(--r3);
+          padding:12px; margin-bottom:8px; cursor:grab; box-shadow:var(--sh1);
+          transition:border-color .14s, box-shadow .14s, transform .05s; }
+  .tcard:hover{ border-color:var(--line2); box-shadow:var(--shcard); }
+  .tcard:active{ cursor:grabbing; }
+  .tcard.dragging{ opacity:.45; }
+  .tcard .lbl{ font-weight:700; margin-bottom:8px; line-height:1.35; }
+  .chips{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:7px; }
+  .chip{ font-size:10px; padding:2px 8px; border-radius:var(--rp); border:1px solid var(--line);
+         color:var(--mut); text-transform:uppercase; letter-spacing:.04em; white-space:nowrap; font-weight:700; }
+  .chip.p0{ color:#fff; background:var(--bad); border-color:var(--bad); }
+  .chip.p1{ color:var(--warn); border-color:var(--warn); }
+  .chip.p2{ color:var(--accent-strong); border-color:rgba(5,150,105,.5); }
+  .chip.p3{ color:var(--mut); border-color:var(--line2); }
+  .chip.ai{ color:var(--purple); border-color:var(--purple); }
+  .chip.human{ color:var(--info); border-color:var(--info); }
+  .chip.unassigned{ color:var(--mut); border-color:var(--line2); }
+  .chip.risklow{ color:var(--ok); border-color:var(--ok); }
+  .chip.riskhigh{ color:#fff; background:var(--bad); border-color:var(--bad); }
+  .chip.due{ color:var(--warn); border-color:var(--warn); }
+  .chip.tag{ color:var(--mut); border-color:var(--line2); text-transform:none; }
+  .chip.auto{ color:var(--ok); border-color:var(--ok); }
+  .cardacts{ display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  .approvelane{ border:1px solid rgba(220,38,38,.4); background:rgba(220,38,38,.05);
+                border-radius:var(--r4); padding:14px 16px; margin-bottom:var(--s4); }
+  .approvelane h3{ margin:0 0 10px; font-size:14px; color:var(--bad); display:flex;
+                   align-items:center; gap:8px; font-weight:750; }
+  .stalelane{ border:1px dashed var(--line); border-radius:var(--rp); padding:10px 12px; margin:0 0 12px; }
+  .stalelane h4{ margin:0 0 8px; font-size:13px; font-weight:500; color:var(--muted); }
+  .chip.proj{ color:var(--muted); } .chip.noproj{ color:var(--bad); border-color:var(--bad); }
+  .approvelane .cnt{ background:var(--bad); color:#fff; border-radius:var(--rp); padding:1px 9px; font-size:12px; }
+  .aprow{ display:flex; align-items:center; gap:10px; padding:9px 0; border-top:1px solid rgba(220,38,38,.18); }
+  .aprow:first-of-type{ border-top:none; }
+  .aprow .lbl{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; }
+  /* The decision row: the ASK reads first, the coordinator's recommendation
+     (with its if-you-never-answer default) second, and the raw task brief is
+     collapsed behind a toggle — it is written for a coordinator, not for the
+     person deciding. */
+  .aprow{ align-items:flex-start; }
+  .apbody{ flex:1; min-width:0; }
+  .aphead{ display:flex; align-items:center; gap:8px; }
+  .aphead .lbl{ white-space:normal; }
+  .aphead .lbl.noask{ font-weight:500; color:var(--muted); }
+  .aprec{ margin-top:4px; font-size:12px; color:var(--muted); }
+  .aprec b{ color:var(--fg); font-weight:600; }
+  .apmiss{ margin-top:4px; font-size:12px; color:#b45309; }
+  .apdet{ margin-top:6px; font-size:12px; color:var(--muted); }
+  .apdet summary{ cursor:pointer; }
+  .apdet div{ margin-top:4px; white-space:pre-wrap; }
+
+  /* ---- card archive actions (subtle secondary / danger) ---- */
+  .chip.arch-not_relevant{ color:var(--bad); border-color:rgba(220,38,38,.5); background:rgba(220,38,38,.06); }
+  .chip.arch-done{ color:var(--ok); border-color:rgba(5,150,105,.5); background:rgba(5,150,105,.07); }
+
+  /* ---- archive section (collapsible, below the columns) ---- */
+  .archive{ margin-top:var(--s5); }
+  .archead{ display:flex; align-items:center; gap:9px; width:100%; text-align:left;
+            background:var(--panel2); border:1px solid var(--line); border-radius:var(--r3);
+            padding:11px 14px; font-size:12px; text-transform:uppercase; letter-spacing:.05em;
+            color:var(--mut); font-weight:700; box-shadow:none; }
+  .archead:hover{ background:var(--panel3); color:var(--fg); }
+  .archead .archchev{ font-size:11px; transition:transform .15s ease; }
+  .archead[aria-expanded="true"] .archchev{ transform:rotate(90deg); }
+  .archead .cnt{ margin-left:auto; background:var(--panel); border:1px solid var(--line);
+                 border-radius:var(--rp); padding:1px 9px; font-size:12px; color:var(--fg); font-weight:700; }
+  .archbody{ margin-top:10px; }
+  .archrow{ display:flex; align-items:center; gap:10px; padding:10px 12px; margin-bottom:6px;
+            border:1px solid var(--line); border-radius:var(--r3); background:var(--panel); box-shadow:var(--sh1); }
+  .archrow .lbl{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; }
+
+  /* ===================== knowledge ===================== */
+  .kfilters{ display:flex; gap:var(--s2); align-items:flex-end; flex-wrap:wrap; }
+  .kfilters .grow{ flex:1; min-width:200px; }
+  .kfilters label{ margin:0 0 4px; }
+  .kfilters button{ margin-bottom:0; }
+
+  .kcard{ background:var(--panel); border:1px solid var(--line); border-radius:var(--r4);
+          padding:var(--s4); margin-bottom:var(--s3); box-shadow:var(--shcard); cursor:pointer;
+          transition:border-color .14s, box-shadow .14s, transform .05s; }
+  .kcard:hover{ border-color:var(--accent); box-shadow:var(--sh1), 0 8px 24px rgba(16,40,30,.07); }
+  .kcard:active{ transform:translateY(1px); }
+  .kcard .khead{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .kcard .ktitle{ font-weight:700; font-size:15px; letter-spacing:-.01em; }
+  .kcard .khint{ font-size:11.5px; color:var(--sub); margin-left:auto; white-space:nowrap; }
+  .kcard .ksnip{ color:var(--mut); font-size:13.5px; line-height:1.55; margin:8px 0 0; }
+  .kcard .kmeta{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-top:9px; }
+
+  /* state badges (distinct colors) */
+  .sbadge{ font-size:10.5px; padding:2px 9px; border-radius:var(--rp); border:1px solid var(--line);
+           text-transform:uppercase; letter-spacing:.04em; font-weight:700; white-space:nowrap; }
+  .sbadge.raw{ color:var(--mut); border-color:var(--line2); background:var(--panel2); }
+  .sbadge.distilled{ color:var(--info); border-color:var(--info); background:rgba(14,165,183,.08); }
+  .sbadge.canonical{ color:var(--accent-strong); border-color:rgba(5,150,105,.5); background:rgba(5,150,105,.09); }
+
+  .tagchip{ font-size:10.5px; padding:2px 9px; border-radius:var(--rp); border:1px solid var(--line2);
+            color:var(--mut); font-weight:600; white-space:nowrap; }
+
+  /* ---- reader slide-over ---- */
+  .reader-scrim{ position:fixed; inset:0; background:rgba(16,32,26,.44); z-index:70; display:none; }
+  .reader-scrim.show{ display:block; }
+  .reader{ position:fixed; top:0; right:0; height:100vh; width:min(680px,96vw); background:var(--panel);
+           border-left:1px solid var(--line); box-shadow:var(--sh2); z-index:71; display:flex;
+           flex-direction:column; transform:translateX(100%); transition:transform .22s ease; }
+  .reader.show{ transform:none; }
+  .reader-top{ display:flex; align-items:center; gap:12px; padding:16px 20px; flex:none;
+               border-bottom:1px solid var(--line); background:var(--panel2); }
+  .reader-top .rt-title{ font-size:17px; font-weight:750; letter-spacing:-.01em; flex:1; min-width:0;
+                         line-height:1.3; }
+  .reader-close{ width:34px; height:34px; padding:0; border-radius:var(--r2); font-size:15px; flex:none; }
+  .reader-body{ flex:1; overflow:auto; padding:22px 26px 80px; }
+  .reader-body .rmeta{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-bottom:16px; }
+  .rcontent{ font-size:15px; line-height:1.72; color:var(--fg); white-space:pre-wrap;
+             overflow-wrap:break-word; max-width:66ch; }
+  .rsection{ margin-top:26px; border-top:1px solid var(--line); padding-top:16px; }
+  .rsection h3{ font-size:11.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--mut);
+                font-weight:700; margin:0 0 10px; }
+  .rlink{ display:flex; align-items:center; gap:9px; padding:9px 12px; border:1px solid var(--line);
+          border-radius:var(--r2); margin-bottom:6px; background:var(--panel); cursor:pointer;
+          transition:border-color .14s, background .14s; }
+  .rlink:hover{ border-color:var(--accent); background:var(--panel2); }
+  .rlink .lbl{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+               font-weight:600; font-size:13.5px; }
+  .rlink .ldir{ font-size:10px; color:var(--sub); text-transform:uppercase; letter-spacing:.04em;
+                flex:none; }
+
+  /* ---- connections graph ---- */
+  .graphwrap{ position:relative; border:1px solid var(--line); border-radius:var(--r4); overflow:hidden;
+              background:radial-gradient(700px 460px at 50% -5%, rgba(16,185,129,.05), transparent 70%),
+                         var(--panel2); }
+  .graphwrap svg{ display:block; width:100%; height:600px; cursor:grab; touch-action:none;
+                  user-select:none; -webkit-user-select:none; }
+  .graphwrap svg:active{ cursor:grabbing; }
+  .gnode-label{ font-size:11px; fill:var(--fg); pointer-events:none; font-weight:600;
+                paint-order:stroke; stroke:var(--panel2); stroke-width:3px; stroke-linejoin:round; }
+  .gtag-label{ font-size:11px; fill:#2c343b; pointer-events:none; font-weight:700; letter-spacing:.1px; }
+  .gnote{ position:absolute; top:10px; left:12px; font-size:11.5px; color:var(--mut); background:var(--panel);
+          border:1px solid var(--line); border-radius:var(--rp); padding:3px 11px; box-shadow:var(--sh1);
+          z-index:3; }
+  .glegend{ position:absolute; bottom:10px; left:12px; display:flex; gap:12px; flex-wrap:wrap; z-index:3;
+            background:var(--panel); border:1px solid var(--line); border-radius:var(--r2);
+            padding:6px 11px; font-size:11.5px; box-shadow:var(--sh1); }
+  .glegend span{ display:inline-flex; align-items:center; gap:5px; color:var(--mut); font-weight:600; }
+  .glegend i{ width:9px; height:9px; border-radius:50%; display:inline-block; flex:none; }
+  .gpop{ position:absolute; background:var(--panel); border:1px solid var(--line2); border-radius:var(--r2);
+         box-shadow:var(--sh2); padding:11px 13px; font-size:13px; max-width:240px; z-index:5; display:none; }
+
+  /* ===================== responsive ===================== */
+  @media (max-width:820px){
+    .sidebar{ position:fixed; left:0; top:0; transform:translateX(-100%);
+              transition:transform .2s ease; box-shadow:var(--sh2); }
+    body.authed .sidebar{ display:flex; }
+    .sidebar.open{ transform:none; }
+    body.authed .menu-btn{ display:inline-flex; }
+    .board{ flex-direction:column; }
+    .col{ width:100%; }
+    main{ padding:var(--s4) var(--s4) 72px; }
+    .topbar{ padding:10px 14px; }
+    .view-header h1{ font-size:20px; }
+    .slugchip{ max-width:44vw; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <!-- ===================== SIDEBAR ===================== -->
+  <aside class="sidebar" id="sidebar" aria-label="Primary navigation">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="3" fill="#fff"/>
+          <circle cx="5" cy="6" r="2" fill="#fff"/><circle cx="19" cy="6" r="2" fill="#fff"/>
+          <circle cx="5" cy="18" r="2" fill="#fff"/><circle cx="19" cy="18" r="2" fill="#fff"/>
+          <path d="M12 12L5 6M12 12l7-6M12 12l-7 6M12 12l7 6" stroke="#fff" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <span class="wm"><b>Swarm</b><span>Chat tracking &amp; core</span></span>
+    </div>
+    <nav class="nav" id="viewNav">
+      <div class="navlabel">Workspace</div>
+      <button data-view="settings" class="navitem active">
+        <span class="nic" aria-hidden="true">⚙️</span><span class="ntt">Settings</span>
+      </button>
+      <button data-view="core" class="navitem">
+        <span class="nic" aria-hidden="true">🗂️</span><span class="ntt">Core board</span>
+      </button>
+      <button data-view="events" class="navitem">
+        <span class="nic" aria-hidden="true">📅</span><span class="ntt">Events</span>
+      </button>
+      <button data-view="replies" class="navitem">
+        <span class="nic" aria-hidden="true">✉️</span><span class="ntt">Replies</span>
+      </button>
+      <button data-view="team" class="navitem">
+        <span class="nic" aria-hidden="true">👥</span><span class="ntt">Team</span>
+      </button>
+      <button data-view="knowledge" class="navitem">
+        <span class="nic" aria-hidden="true">🧠</span><span class="ntt">Knowledge</span>
+      </button>
+    </nav>
+    <div class="sfoot">Swarm management · live config</div>
+  </aside>
+
+  <!-- ===================== CONTENT ===================== -->
+  <div class="content">
+    <div class="topbar">
+      <button class="menu-btn" id="menuBtn" aria-label="Toggle navigation">☰</button>
+      <span class="sp"></span>
+      <span class="slugchip" id="slugLabel"></span>
+      <button id="logout" class="hide sm">Forget token</button>
+    </div>
+
+    <main>
+      <!-- token gate -->
+      <div id="gate" class="card gate">
+        <span class="logo-lg" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="3" fill="#fff"/>
+            <circle cx="5" cy="6" r="2" fill="#fff"/><circle cx="19" cy="6" r="2" fill="#fff"/>
+            <circle cx="5" cy="18" r="2" fill="#fff"/><circle cx="19" cy="18" r="2" fill="#fff"/>
+            <path d="M12 12L5 6M12 12l7-6M12 12l-7 6M12 12l7 6" stroke="#fff" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <h2>Welcome to Swarm</h2>
+        <p class="muted">Paste the bearer token from <code>secrets.toml [tracking_ui]</code> to connect. It is stored in this browser only.</p>
+        <input type="text" id="tokenInput" placeholder="Bearer token">
+        <div class="row" style="margin-top:12px"><button class="primary" id="tokenSave">Connect</button></div>
+        <p class="muted" id="gateErr" style="color:var(--bad)"></p>
+      </div>
+
+      <!-- app -->
+      <div id="app" class="hide">
+        <div id="viewSettings">
+        <div class="view-header">
+          <h1><span class="vi">⚙️</span> Settings</h1>
+          <p>Tracking settings — choose which chats Swarm watches and how it reacts. Extracted meetings live under Events, reply drafts under Replies, todos on the Core board.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h2>Tracking config</h2><span class="sp"></span><span class="pill cl" style="cursor:default">live · no restart</span></div>
+          <p class="section-desc">Changes apply on the next periodic run or next message — no restart needed.</p>
+          <label class="fieldtoggle"><span class="tgl"><input type="checkbox" id="enabled"><span class="tsl"></span></span> Tracking enabled</label>
+          <label>Scope mode</label>
+          <div class="radios">
+            <label><input type="radio" name="mode" value="include"> include (only listed)</label>
+            <label><input type="radio" name="mode" value="exclude"> exclude (all but listed)</label>
+          </div>
+          <label>Chats <span class="muted" id="trackedCount"></span></label>
+          <input type="search" id="chatSearch" placeholder="Search chats by title or id…">
+          <div class="chatlist" id="chatList"></div>
+          <div class="legend">
+            <b>Tracked toggle</b> = watched ·
+            <b class="rt">RT</b> = realtime (processed on arrival; subset of tracked in include mode) ·
+            <b class="cl">@claude</b> = allow the @claude auto-reply in this chat (independent of tracking; off by default) ·
+            <b class="dr">draft</b> = pre-fill the suggested reply into your input box (nothing sent; independent; off by default).
+          </div>
+          <div class="row" style="margin-top:14px">
+            <button class="primary" id="saveCfg">Save config</button>
+            <span class="muted" id="cfgStatus"></span>
+          </div>
+          <hr class="div">
+          <label>Historic sweep <span class="muted">(on-demand)</span></label>
+          <p class="section-desc">Mine recent history of all tracked chats for todos / meetings and build daily summaries.</p>
+          <div class="row">
+            <span class="muted">Sweep last</span>
+            <input type="text" id="sweepDays" value="7" inputmode="numeric" style="width:64px">
+            <span class="muted">days of all tracked chats</span>
+            <button id="sweepBtn">Run sweep</button>
+            <span class="muted" id="sweepStatus"></span>
+          </div>
+        </div>
+
+        </div><!-- /viewSettings -->
+
+        <!-- ===================== CORE VIEW ===================== -->
+        <div id="viewCore" class="hide">
+          <div class="view-header">
+            <h1><span class="vi">🗂️</span> Core board</h1>
+            <p>The single source of truth for work: move tasks across the flow, approve high-risk items, and inspect entity provenance.</p>
+          </div>
+          <div class="subtabs" id="coreSubNav">
+            <button data-sub="board" class="active">Board</button>
+            <button data-sub="details">Details &amp; provenance</button>
+          </div>
+
+          <!-- ---------- AGILE BOARD (default) ---------- -->
+          <div id="coreBoard">
+            <div class="row" style="justify-content:space-between; margin-bottom:14px">
+              <span class="muted" style="font-size:13px">Assign, approve high-risk work, and drag or ◀▶ tasks across the flow.</span>
+              <button id="boardRefresh">Refresh</button>
+            </div>
+            <div id="approveLane" class="approvelane hide"></div>
+            <div id="staleApprovals" class="stalelane hide"></div>
+            <div class="board">
+              <div class="col">
+                <div class="colhead">Backlog <span class="cnt" id="cnt-backlog">0</span></div>
+                <div class="cards" id="col-backlog" data-col="backlog"></div>
+              </div>
+              <div class="col">
+                <div class="colhead">In Progress <span class="cnt" id="cnt-in_progress">0</span></div>
+                <div class="cards" id="col-in_progress" data-col="in_progress"></div>
+              </div>
+              <div class="col">
+                <div class="colhead">Done <span class="cnt" id="cnt-done">0</span></div>
+                <div class="cards" id="col-done" data-col="done"></div>
+              </div>
+            </div>
+
+            <!-- ---------- ARCHIVE (collapsed by default) ---------- -->
+            <div class="archive" id="archiveSection">
+              <button class="archead" id="archiveToggle" aria-expanded="false">
+                <span class="archchev" aria-hidden="true">▸</span>
+                <span>🗄 Archive</span>
+                <span class="cnt" id="cnt-archived">0</span>
+              </button>
+              <div class="archbody hide" id="archiveBody"></div>
+            </div>
+          </div>
+
+          <!-- ---------- DETAILS & PROVENANCE ---------- -->
+          <div id="coreDetails" class="hide">
+          <div class="card">
+            <div class="card-head"><h2>Product-core snapshot</h2></div>
+            <div id="coreMissing" class="muted hide">No <code>core.db</code> yet — the core system hasn't been populated on this host.</div>
+            <div class="row corecounts" id="coreTypeCounts"></div>
+            <div class="row corecounts" id="coreTrustCounts" style="margin-top:8px"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h2>Pending confirm queue</h2></div>
+            <p class="section-desc">Proposed entities awaiting Tim's confirm / reject. This is the human-in-the-loop trust gate.</p>
+            <div id="corePending"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h2>Tags — project / goal collections</h2></div>
+            <div id="coreTags"></div>
+            <div id="coreTagDetail" class="hide" style="margin-top:12px"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h2>Entities browser</h2></div>
+            <div class="row" style="margin-bottom:10px">
+              <select id="coreFilterType" style="max-width:180px">
+                <option value="">all types</option>
+                <option value="task">task</option>
+                <option value="event">event</option>
+                <option value="artifact">artifact</option>
+                <option value="worker">worker</option>
+              </select>
+              <select id="coreFilterTrust" style="max-width:180px">
+                <option value="">all trust</option>
+                <option value="proposed">proposed</option>
+                <option value="confirmed">confirmed</option>
+                <option value="rejected">rejected</option>
+              </select>
+              <button id="coreEntitiesRefresh">Refresh</button>
+            </div>
+            <div id="coreEntities"></div>
+            <div id="coreEntityDetail" class="hide" style="margin-top:12px"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h2>Dependency graph</h2></div>
+            <p class="section-desc">Canonical <code>blocks</code> edges. depends-on is derived (incoming blocks).</p>
+            <div id="coreDeps"></div>
+          </div>
+          </div><!-- /coreDetails -->
+        </div><!-- /viewCore -->
+
+        <!-- ===================== EVENTS VIEW ===================== -->
+        <div id="viewEvents" class="hide">
+          <div class="view-header">
+            <h1><span class="vi">📅</span> Events</h1>
+            <p>Meetings Swarm extracted from your chats, laid out as an agenda. Approve to add to your Apple Calendar, or dismiss what doesn't belong.</p>
+          </div>
+          <div class="row" style="justify-content:space-between; margin-bottom:14px">
+            <span class="muted" style="font-size:13px">Grouped by day · Approve adds to the calendar, Dismiss files it away.</span>
+            <button id="refreshEvents">Refresh</button>
+          </div>
+          <div id="eventsBox"></div>
+        </div><!-- /viewEvents -->
+
+        <!-- ===================== REPLIES VIEW ===================== -->
+        <div id="viewReplies" class="hide">
+          <div class="view-header">
+            <h1><span class="vi">✉️</span> Replies</h1>
+            <p>Suggested replies Swarm drafted from your chats. Edit the draft, then Send from your own Telegram account — or dismiss it.</p>
+          </div>
+          <div class="card">
+            <p class="section-desc">Each draft answers the conversation shown above it. Editing before sending is encouraged — nothing goes out until you press Send.</p>
+            <div class="row" style="margin-bottom:10px">
+              <select id="replyStatus" style="max-width:200px">
+                <option value="">active drafts (pending)</option>
+                <option value="sent">sent</option>
+                <option value="skipped">skipped</option>
+                <option value="approved">approved</option>
+              </select>
+              <button id="refreshReplies">Refresh</button>
+            </div>
+            <div id="repliesBox"></div>
+          </div>
+        </div><!-- /viewReplies -->
+
+        <!-- ===================== TEAM VIEW ===================== -->
+        <div id="viewTeam" class="hide">
+          <div class="view-header">
+            <h1><span class="vi">👥</span> Team</h1>
+            <p>The curated worker roster. High-risk approvals route to active owners &amp; admins reachable by telegram.</p>
+          </div>
+          <div class="card">
+            <div class="card-head"><h2>Add worker</h2><span class="sp"></span><span class="muted" style="font-size:12px">curated by hand, not auto-derived</span></div>
+            <div class="row" style="align-items:flex-end; gap:12px">
+              <div style="flex:2; min-width:160px">
+                <label for="wName">Name</label>
+                <input type="text" id="wName" placeholder="e.g. Anton">
+              </div>
+              <div style="min-width:120px">
+                <label for="wKind">Kind</label>
+                <select id="wKind"><option value="human">human</option><option value="ai">ai</option></select>
+              </div>
+              <div style="min-width:120px">
+                <label for="wRole">Role</label>
+                <select id="wRole"><option value="member">member</option><option value="admin">admin</option><option value="owner">owner</option></select>
+              </div>
+              <div style="flex:2; min-width:160px">
+                <label for="wCaps">Capabilities</label>
+                <input type="text" id="wCaps" placeholder="e.g. backend, review">
+              </div>
+              <div style="flex:2; min-width:160px">
+                <label for="wChannel">Channel</label>
+                <input type="text" id="wChannel" placeholder="e.g. 200974761 (telegram)">
+              </div>
+              <button class="primary" id="wAdd">Add worker</button>
+            </div>
+            <p class="section-desc" style="margin-top:12px">High-risk approvals route to active <b>owner</b>/<b>admin</b> workers whose channel is a numeric telegram chat id (else the configured chat).</p>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h2>Roster</h2><span class="sp"></span><button id="teamRefresh">Refresh</button></div>
+            <div id="teamMissing" class="muted hide">No <code>core.db</code> yet — add a worker to create it.</div>
+            <div id="teamList"></div>
+          </div>
+        </div><!-- /viewTeam -->
+
+        <!-- ===================== KNOWLEDGE VIEW ===================== -->
+        <div id="viewKnowledge" class="hide">
+          <div class="view-header">
+            <h1><span class="vi">🧠</span> Knowledge</h1>
+            <p>The swarm's Information Artifacts — raw notes distilled into canonical knowledge — and how everything connects. Read an artifact, follow its provenance, or explore the graph.</p>
+          </div>
+          <div class="subtabs" id="knowSubNav">
+            <button data-sub="list" class="active">List</button>
+            <button data-sub="graph">Graph</button>
+          </div>
+
+          <!-- ---------- LIST (default) ---------- -->
+          <div id="knowList">
+            <div class="card">
+              <div class="kfilters">
+                <div class="grow">
+                  <label for="kSearch">Search</label>
+                  <input type="search" id="kSearch" placeholder="Search titles &amp; content…">
+                </div>
+                <div style="min-width:150px">
+                  <label for="kState">State</label>
+                  <select id="kState">
+                    <option value="">any state</option>
+                    <option value="raw">raw</option>
+                    <option value="distilled">distilled</option>
+                    <option value="canonical">canonical</option>
+                  </select>
+                </div>
+                <div style="min-width:150px">
+                  <label for="kTag">Tag</label>
+                  <input type="text" id="kTag" placeholder="#tag filter">
+                </div>
+                <button id="kRefresh">Refresh</button>
+              </div>
+              <div class="muted hide" id="kCoreMissing" style="font-size:13px; margin-top:10px"></div>
+            </div>
+            <div id="kResults"></div>
+          </div>
+
+          <!-- ---------- GRAPH ---------- -->
+          <div id="knowGraph" class="hide">
+            <div class="card">
+              <div class="row" style="justify-content:space-between; gap:12px">
+                <span class="muted" style="font-size:13px">Force-directed connections — drag nodes, scroll to zoom, drag the background to pan, click a node to open it.</span>
+                <div class="row">
+                  <input type="text" id="gTag" placeholder="#tag scope" style="max-width:160px">
+                  <button id="gRefresh">Refresh</button>
+                </div>
+              </div>
+            </div>
+            <div class="graphwrap" id="graphWrap">
+              <div class="gnote hide" id="gNote"></div>
+              <div class="glegend" aria-hidden="true">
+                <span><i style="background:#059669"></i>task</span>
+                <span><i style="background:#d97706"></i>event</span>
+                <span><i style="background:#7c3aed"></i>artifact</span>
+                <span><i style="background:#0ea5b7"></i>worker</span>
+              </div>
+              <div class="gpop" id="gPop"></div>
+            </div>
+          </div>
+        </div><!-- /viewKnowledge -->
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="scrim" id="scrim"></div>
+
+<!-- ===================== ARTIFACT READER (slide-over) ===================== -->
+<div class="reader-scrim" id="readerScrim"></div>
+<aside class="reader" id="reader" aria-label="Artifact reader" aria-hidden="true">
+  <div class="reader-top">
+    <span class="rt-title" id="readerTitle">…</span>
+    <button class="reader-close" id="readerClose" aria-label="Close reader">✕</button>
+  </div>
+  <div class="reader-body" id="readerBody"></div>
+</aside>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SLUG = new URLSearchParams(location.search).get("slug") || "swarmdev";
+document.getElementById("slugLabel").textContent = SLUG;
+let TOKEN = localStorage.getItem("tg_ui_token") || "";
+let CHATS = [];          // from /api/chats
+let TRACKED = new Set(); // entry-keys (string of chat_id) currently tracked
+let REALTIME = new Set();
+let CLAUDE = new Set();   // @claude allowlist (independent of tracked/RT)
+let DRAFT = new Set();    // auto-draft allowlist (independent of all others)
+let CURTAB = "meetings";  // Todos now live on the Core board; Items = Meetings + Replies
+
+function keyOf(v){ return String(v).trim().replace(/^@/,"").toLowerCase(); }
+function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.style.display="block";
+  clearTimeout(t._t); t._t=setTimeout(()=>t.style.display="none", 3500); }
+
+async function api(path, opts={}){
+  opts.headers = Object.assign({"Authorization":"Bearer "+TOKEN}, opts.headers||{});
+  if (opts.body && typeof opts.body !== "string"){ opts.headers["Content-Type"]="application/json"; opts.body=JSON.stringify(opts.body); }
+  const r = await fetch(path, opts);
+  if (r.status === 401){ throw {auth:true}; }
+  if (!r.ok){ const txt = await r.text(); throw new Error(txt || ("HTTP "+r.status)); }
+  return r.status === 204 ? null : r.json();
+}
+
+// --- mobile drawer ---
+function closeNav(){ document.getElementById("sidebar").classList.remove("open");
+  document.getElementById("scrim").classList.remove("show"); }
+document.getElementById("menuBtn").onclick = () => {
+  document.getElementById("sidebar").classList.toggle("open");
+  document.getElementById("scrim").classList.toggle("show");
+};
+document.getElementById("scrim").onclick = closeNav;
+
+// --- token gate ---
+function showGate(err){
+  document.body.classList.remove("authed");
+  document.getElementById("app").classList.add("hide");
+  document.getElementById("gate").classList.remove("hide");
+  document.getElementById("logout").classList.add("hide");
+  closeNav();
+  if (err) document.getElementById("gateErr").textContent = err;
+}
+function showApp(){
+  document.body.classList.add("authed");
+  document.getElementById("gate").classList.add("hide");
+  document.getElementById("app").classList.remove("hide");
+  document.getElementById("logout").classList.remove("hide");
+}
+document.getElementById("tokenSave").onclick = async () => {
+  TOKEN = document.getElementById("tokenInput").value.trim();
+  if (!TOKEN) return;
+  localStorage.setItem("tg_ui_token", TOKEN);
+  await boot();
+};
+document.getElementById("logout").onclick = () => {
+  localStorage.removeItem("tg_ui_token"); TOKEN=""; showGate("");
+};
+
+// --- config panel ---
+function fmtTs(ts){ if(!ts) return ""; const d=new Date(ts*1000);
+  return d.toLocaleString([], {month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}); }
+
+function renderChats(){
+  const q = document.getElementById("chatSearch").value.trim().toLowerCase();
+  const list = document.getElementById("chatList");
+  const mode = (document.querySelector("input[name=mode]:checked")||{}).value;
+  list.innerHTML = "";
+  let shown = 0;
+  for (const c of CHATS){
+    const k = keyOf(c.chat_id);
+    const hay = ((c.title||"")+" "+c.chat_id).toLowerCase();
+    const tracked = TRACKED.has(k);
+    const pinned = tracked || CLAUDE.has(k) || DRAFT.has(k);  // keep selected chats visible
+    if (q && !hay.includes(q) && !pinned) continue;
+    if (shown++ > 400 && !pinned) continue;
+    const rt = REALTIME.has(k);
+    const cl = CLAUDE.has(k);
+    const dr = DRAFT.has(k);
+    const div = document.createElement("div"); div.className="chat";
+    div.innerHTML = `
+      <span class="tgl" title="tracked — watch this chat"><input type="checkbox" ${tracked?"checked":""} data-k="${k}" class="cbT"><span class="tsl"></span></span>
+      <div class="chatmain">
+        <span class="title">${escapeHtml(c.title||"(no title)")}</span>
+        <span class="meta">${c.kind||""} · ${c.chat_id} · ${c.msg_count||0} msg · ${fmtTs(c.last_ts)}</span>
+      </div>
+      <div class="chatctl">
+        <label class="mini rt" title="realtime"><span>RT</span><span class="tgl"><input type="checkbox" ${rt?"checked":""} data-k="${k}" class="cbR" ${tracked?"":"disabled"}><span class="tsl"></span></span></label>
+        <label class="mini cl" title="@claude auto-reply allowed in this chat"><span>@claude</span><span class="tgl cl"><input type="checkbox" ${cl?"checked":""} data-k="${k}" class="cbC"><span class="tsl"></span></span></label>
+        <label class="mini dr" title="auto-draft: pre-fill the suggested reply into your input box (nothing sent)"><span>draft</span><span class="tgl dr"><input type="checkbox" ${dr?"checked":""} data-k="${k}" class="cbD"><span class="tsl"></span></span></label>
+      </div>`;
+    list.appendChild(div);
+  }
+  list.querySelectorAll(".cbT").forEach(cb => cb.onchange = e => {
+    const k=e.target.dataset.k;
+    if (e.target.checked) TRACKED.add(k); else { TRACKED.delete(k); REALTIME.delete(k); }
+    updateCount(); renderChats();
+  });
+  list.querySelectorAll(".cbR").forEach(cb => cb.onchange = e => {
+    const k=e.target.dataset.k;
+    if (e.target.checked) REALTIME.add(k); else REALTIME.delete(k);
+    updateCount();
+  });
+  list.querySelectorAll(".cbC").forEach(cb => cb.onchange = e => {
+    const k=e.target.dataset.k;
+    // @claude is independent of tracking — toggle freely, then restyle the pill.
+    if (e.target.checked) CLAUDE.add(k); else CLAUDE.delete(k);
+    updateCount(); renderChats();
+  });
+  list.querySelectorAll(".cbD").forEach(cb => cb.onchange = e => {
+    const k=e.target.dataset.k;
+    // auto-draft is independent of all other toggles — toggle freely + restyle.
+    if (e.target.checked) DRAFT.add(k); else DRAFT.delete(k);
+    updateCount(); renderChats();
+  });
+  updateCount();
+}
+function updateCount(){
+  document.getElementById("trackedCount").textContent =
+    `· ${TRACKED.size} tracked, ${REALTIME.size} realtime, ${CLAUDE.size} @claude, ${DRAFT.size} draft`;
+}
+function escapeHtml(s){ return (s||"").replace(/[&<>"']/g, m =>
+  ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m])); }
+
+document.getElementById("chatSearch").oninput = renderChats;
+document.querySelectorAll("input[name=mode]").forEach(r => r.onchange = renderChats);
+
+document.getElementById("saveCfg").onclick = async () => {
+  const mode = (document.querySelector("input[name=mode]:checked")||{}).value || "exclude";
+  // Build typed lists from selected keys: emit numeric ids as numbers.
+  const toEntry = k => { const c = CHATS.find(x => keyOf(x.chat_id)===k);
+                         return c ? c.chat_id : (/^-?\d+$/.test(k) ? parseInt(k,10) : k); };
+  const chats = [...TRACKED].map(toEntry);
+  const realtime = [...REALTIME].map(toEntry);
+  const claude = [...CLAUDE].map(toEntry);
+  const auto_draft = [...DRAFT].map(toEntry);
+  const body = { slug:SLUG, enabled:document.getElementById("enabled").checked, mode, chats, realtime, claude, auto_draft };
+  try {
+    await api("/api/config", {method:"PUT", body});
+    document.getElementById("cfgStatus").textContent = "saved ✓ (live)";
+    toast("Config saved — applies on next periodic run / next message.");
+  } catch(e){ if(e.auth) return showGate("token rejected"); toast("Save failed: "+e.message); }
+};
+
+// --- historic sweep ---
+let SWEEP_POLL = null;
+function setSweepStatus(msg){ document.getElementById("sweepStatus").textContent = msg; }
+
+async function pollSweep(){
+  let st;
+  try { st = await api("/api/sweep/status"); }
+  catch(e){ if(e.auth) return showGate("token rejected"); return; }
+  if (st.running){
+    const t = st.target || {};
+    // Only update the status text while sweeping — do NOT reload the whole items
+    // list every poll (that looked like the page was continuously reloading).
+    // Results are loaded once when the sweep finishes; use Refresh to peek.
+    setSweepStatus(`running… (${t.days||"?"}d, ${t.chat_id?("chat "+t.chat_id):"all tracked chats"}) — items load when done`);
+    return;
+  }
+  // finished
+  if (SWEEP_POLL){ clearInterval(SWEEP_POLL); SWEEP_POLL=null; }
+  document.getElementById("sweepBtn").disabled = false;
+  const r = st.last_result;
+  if (r && r.ok){
+    setSweepStatus(`done ✓ ${r.chats!=null?r.chats+" chats · ":""}${r.todos||0} todos · ${r.meetings||0} meetings · ${r.summaries||0} summaries`);
+    toast("Sweep complete.");
+  } else if (r){
+    setSweepStatus("failed: "+(r.error||"error"));
+  } else {
+    setSweepStatus("");
+  }
+  loadItems();
+}
+
+document.getElementById("sweepBtn").onclick = async () => {
+  const days = parseInt(document.getElementById("sweepDays").value, 10) || 7;
+  document.getElementById("sweepBtn").disabled = true;
+  setSweepStatus("starting…");
+  let res;
+  try { res = await api("/api/sweep", {method:"POST", body:{slug:SLUG, days}}); }
+  catch(e){ document.getElementById("sweepBtn").disabled=false;
+            if(e.auth) return showGate("token rejected");
+            return setSweepStatus("error: "+e.message); }
+  if (!res.started){
+    document.getElementById("sweepBtn").disabled = false;
+    setSweepStatus(res.busy ? "a sweep is already running" : "could not start");
+    return;
+  }
+  setSweepStatus("running…");
+  if (SWEEP_POLL) clearInterval(SWEEP_POLL);
+  SWEEP_POLL = setInterval(pollSweep, 3000);
+};
+
+// --- items panels (Events = meetings · Replies = suggested replies) ---
+document.getElementById("refreshEvents").onclick = loadEvents;
+document.getElementById("refreshReplies").onclick = loadReplies;
+document.getElementById("replyStatus").onchange = loadReplies;
+
+// loadItems() stays the single entry point (called by boot() + pollSweep()):
+// it dispatches to whichever items view is current (CURTAB).
+async function loadItems(){
+  return CURTAB === "replies" ? loadReplies() : loadEvents();
+}
+
+// ----- Events (meetings) : agenda grouped by day -----
+function startOfDay(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+function eventBucket(iso){
+  if (!iso) return { key:"none", label:"No date", order:6 };
+  const d = new Date(iso);
+  if (isNaN(d)) return { key:"none", label:"No date", order:6 };
+  const diff = Math.round((startOfDay(d) - startOfDay(new Date())) / 86400000);
+  if (diff < 0)  return { key:"earlier",  label:"Earlier",   order:5 };
+  if (diff === 0) return { key:"today",    label:"Today",     order:0 };
+  if (diff === 1) return { key:"tomorrow", label:"Tomorrow",  order:1 };
+  if (diff <= 7)  return { key:"week",     label:"This week", order:2 };
+  return           { key:"later",    label:"Later",     order:3 };
+}
+function fmtEvtWhen(iso){
+  const d = new Date(iso); const valid = !isNaN(d);
+  return { valid,
+    time: valid ? d.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}) : "",
+    day:  valid ? d.toLocaleDateString([], {weekday:"short", month:"short", day:"numeric"}) : "" };
+}
+function evtDuration(a, b){
+  if (!a || !b) return "";
+  const s = new Date(a), e = new Date(b);
+  if (isNaN(s) || isNaN(e)) return "";
+  let m = Math.round((e - s) / 60000);
+  if (m <= 0) return "";
+  if (m < 60) return m + "m";
+  const h = Math.floor(m / 60), r = m % 60;
+  return r ? h + "h" + r : h + "h";
+}
+function evtStatusMeta(st){
+  st = (st || "new");
+  if (["approved","accepted","invited"].includes(st)) return { cls:"done", pill:"ok" };
+  if (["dismissed","declined","rejected","skipped"].includes(st)) return { cls:"dismissed", pill:"bad" };
+  return { cls:"", pill:"" };
+}
+
+async function loadEvents(){
+  CURTAB = "meetings";
+  const box = document.getElementById("eventsBox");
+  box.innerHTML = '<p class="muted">loading…</p>';
+  let rows;
+  try { rows = await api(`/api/items?slug=${encodeURIComponent(SLUG)}&type=meetings`); }
+  catch(e){ if(e.auth) return showGate("token rejected"); box.innerHTML='<p class="muted">error: '+escapeHtml(e.message)+'</p>'; return; }
+  if (!rows.length){ box.innerHTML='<div class="empty">No meetings extracted yet.</div>'; return; }
+  const groups = {};
+  for (const r of rows){
+    const b = eventBucket(r.start_dt);
+    (groups[b.key] = groups[b.key] || {label:b.label, order:b.order, items:[]}).items.push(r);
+  }
+  const ordered = Object.values(groups).sort((a,b)=>a.order-b.order);
+  box.innerHTML = "";
+  for (const g of ordered){
+    // upcoming groups: earliest first; undated/earlier fall back to recency
+    g.items.sort((a,b)=> String(a.start_dt||"~").localeCompare(String(b.start_dt||"~")));
+    const wrap = document.createElement("div"); wrap.className = "agenda-group";
+    wrap.innerHTML = `<div class="agenda-head"><span class="gt">${escapeHtml(g.label)}</span>`
+      + `<span class="gc">${g.items.length}</span><span class="gline"></span></div>`;
+    for (const r of g.items) wrap.appendChild(renderEventCard(r));
+    box.appendChild(wrap);
+  }
+}
+
+function renderEventCard(r){
+  const card = document.createElement("div");
+  const sm = evtStatusMeta(r.status);
+  const past = r.start_dt && eventBucket(r.start_dt).key === "earlier";
+  card.className = "evt" + (sm.cls ? " "+sm.cls : (past ? " past" : ""));
+  const st = (r.status || "new");
+  const w = r.start_dt ? fmtEvtWhen(r.start_dt) : {valid:false};
+  const dur = evtDuration(r.start_dt, r.end_dt);
+  const rail = (w.valid)
+    ? `<span class="evt-time">${escapeHtml(w.time)}</span>`
+      + (dur ? `<span class="evt-dur">${escapeHtml(dur)}</span>` : "")
+      + `<span class="evt-date">${escapeHtml(w.day)}</span>`
+    : `<span class="evt-time" style="font-size:14px">—</span><span class="evt-date">no date</span>`;
+  const meta = [];
+  if (r.location)     meta.push(`<span class="mi">📍 ${escapeHtml(r.location)}</span>`);
+  if (r.participants) meta.push(`<span class="mi">👥 ${escapeHtml(r.participants)}</span>`);
+  if (r.link)         meta.push(`<span class="mi">🔗 <a href="${escapeHtml(r.link)}" target="_blank" rel="noopener">link</a></span>`);
+  const note = (st==="invited") ? "Invite sent — accept/decline in Apple Calendar"
+    : (st==="accepted") ? "Accepted in Apple Calendar ✓"
+    : (st==="declined") ? "Declined in Apple Calendar — removed from your Swarm calendar"
+    : (r.start_dt ? "" : "No date/time — nothing to add to the calendar");
+  card.innerHTML =
+    `<div class="evt-rail">${rail}</div>`
+    + `<div class="evt-body">`
+      + `<div class="evt-head"><span class="evt-title">${escapeHtml(r.title||"(untitled meeting)")}</span>`
+        + `<span class="evt-status${sm.pill?" "+sm.pill:""}">${escapeHtml(st)}</span></div>`
+      + (meta.length ? `<div class="evt-meta">${meta.join("")}</div>` : "")
+      + (note ? `<div class="evt-note">📅 ${escapeHtml(note)}</div>` : "")
+      + `<div class="evt-from">from ${escapeHtml(r.chat_title||("chat "+r.chat_id))} · ${escapeHtml(fmtTs(r.ts))}</div>`
+      + `<div class="acts"></div>`
+      + `<div class="status">status: <b>${escapeHtml(st)}</b></div>`
+    + `</div>`;
+  const acts = card.querySelector(".acts");
+  const mk = (label, decision, cls) => { const b=document.createElement("button");
+    b.textContent=label; b.className=cls;
+    b.onclick=()=>{ CURTAB="meetings"; decide(r.id, decision, card); }; return b; };
+  acts.appendChild(mk("Approve","approve","ok"));
+  acts.appendChild(mk("Dismiss","dismiss","bad"));
+  return card;
+}
+
+// ----- Replies : suggested drafts (edit + Send) -----
+async function loadReplies(){
+  CURTAB = "replies";
+  let status = document.getElementById("replyStatus").value;
+  // Default to the active draft per chat (one per chat) — hide the
+  // skipped/sent history unless the user explicitly picks a status.
+  if (!status) status = "pending";
+  const box = document.getElementById("repliesBox");
+  box.innerHTML = '<p class="muted">loading…</p>';
+  let rows;
+  try { rows = await api(`/api/items?slug=${encodeURIComponent(SLUG)}&type=replies&status=${encodeURIComponent(status)}`); }
+  catch(e){ if(e.auth) return showGate("token rejected"); box.innerHTML='<p class="muted">error: '+escapeHtml(e.message)+'</p>'; return; }
+  if (!rows.length){ box.innerHTML='<p class="muted">no replies</p>'; return; }
+  box.innerHTML = "";
+  for (const r of rows) box.appendChild(renderItem(r));
+}
+
+function renderItem(r){
+  const div = document.createElement("div"); div.className="item";
+  let bodyHtml="", ts=r.ts;
+  // Todos moved to the Core board — the Tracking Items list is Meetings + Replies.
+  if (CURTAB==="meetings"){
+    const st = (r.status||"new");
+    const note = (st==="invited")
+      ? "Invite sent — accept/decline in Apple Calendar"
+      : (st==="accepted") ? "Accepted in Apple Calendar ✓"
+      : (st==="declined") ? "Declined in Apple Calendar — removed from your Swarm calendar"
+      : (r.start_dt ? "" : "No date/time — nothing to add to the calendar");
+    bodyHtml = `<div class="body"><b>${escapeHtml(r.title||"")}</b></div>`
+      + `<div class="muted">${escapeHtml(r.start_dt||"?")}${r.end_dt?" → "+escapeHtml(r.end_dt):""}`
+      + `${r.location?" · "+escapeHtml(r.location):""}${r.participants?" · "+escapeHtml(r.participants):""}</div>`
+      + (note?`<div class="muted">📅 ${escapeHtml(note)}</div>`:"");
+  } else {
+    let ctxHtml = "";
+    if (r.context && r.context.length){
+      ctxHtml = `<div class="ctx">` + r.context.map(m =>
+        `<div class="cmsg${m.out?" me":""}"><span class="cwho">${escapeHtml(m.out?"You":(m.sender_name||"?"))}</span> ${escapeHtml(m.text||"")}</div>`
+      ).join("") + `</div>`;
+    }
+    bodyHtml = ctxHtml
+      + `<div class="dlabel muted">suggested reply — edit before sending</div>`
+      + `<textarea class="draftEdit" rows="3">${escapeHtml(r.draft_text||"")}</textarea>`;
+  }
+  div.innerHTML = `
+    <div class="top">
+      <span class="chat-title">${escapeHtml(r.chat_title||"(chat "+r.chat_id+")")}</span>
+      <span class="ts">${fmtTs(ts)}</span>
+    </div>
+    ${bodyHtml}
+    <div class="status">status: <b>${escapeHtml(r.status||"")}</b></div>
+    <div class="acts"></div>`;
+  const acts = div.querySelector(".acts");
+  const mk = (label, decision, cls) => { const b=document.createElement("button");
+    b.textContent=label; b.className=cls; b.onclick=()=>decide(r.id, decision, div); return b; };
+  if (CURTAB==="replies"){
+    // Send actually SENDS (from Tim's account, via the bridge queue) the
+    // CURRENT textarea text. Dismiss still records the skipped decision.
+    const send=document.createElement("button");
+    send.textContent="Send"; send.className="primary";
+    send.onclick=()=>sendReply(r.id, div);
+    acts.appendChild(send);
+    acts.appendChild(mk("Dismiss","dismiss","bad"));
+  } else {
+    acts.appendChild(mk("Approve","approve","ok"));
+    acts.appendChild(mk("Dismiss","dismiss","bad"));
+  }
+  return div;
+}
+
+async function sendReply(id, div){
+  const ta = div.querySelector(".draftEdit");
+  const text = ta ? ta.value : "";
+  const buttons = [...div.querySelectorAll(".acts button")];
+  buttons.forEach(b=>b.disabled=true);
+  if (ta) ta.disabled=true;
+  div.querySelector(".status").innerHTML = `status: <b>sending…</b>`;
+  try {
+    const res = await api(`/api/items/replies/${id}/send`, {method:"POST", body:{text}});
+    div.querySelector(".status").innerHTML = `status: <b>sent ✓</b>`;
+    toast(res.note || "Queued — sending from your Telegram account.");
+    loadItems();
+  } catch(e){
+    if(e.auth) return showGate("token rejected");
+    div.querySelector(".status").innerHTML = `status: <b>send failed</b>`;
+    buttons.forEach(b=>b.disabled=false);
+    if (ta) ta.disabled=false;
+    toast("Send failed: "+e.message);
+  }
+}
+
+async function decide(id, decision, div){
+  try {
+    const res = await api(`/api/items/${CURTAB}/${id}/decision`, {method:"POST", body:{decision}});
+    div.querySelector(".status").innerHTML = `status: <b>${escapeHtml(res.status)}</b>`;
+    div.querySelectorAll(".acts button").forEach(b=>b.disabled=true);
+    toast(res.note || "recorded");
+  } catch(e){ if(e.auth) return showGate("token rejected"); toast("Failed: "+e.message); }
+}
+
+// --- core view ---
+let COREVIEW_LOADED = false;
+let CORE_SUB = "board";
+
+document.querySelectorAll("#viewNav button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("#viewNav button").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active");
+  const v = b.dataset.view;
+  // Stop the graph sim when leaving the Knowledge view (saves CPU).
+  if (v!=="knowledge" && GRAPH_RAF){ cancelAnimationFrame(GRAPH_RAF); GRAPH_RAF=null; }
+  document.getElementById("viewSettings").classList.toggle("hide", v!=="settings");
+  document.getElementById("viewCore").classList.toggle("hide", v!=="core");
+  document.getElementById("viewEvents").classList.toggle("hide", v!=="events");
+  document.getElementById("viewReplies").classList.toggle("hide", v!=="replies");
+  document.getElementById("viewTeam").classList.toggle("hide", v!=="team");
+  document.getElementById("viewKnowledge").classList.toggle("hide", v!=="knowledge");
+  // The board + graph want more horizontal room than the settings/agenda forms.
+  document.querySelector("main").classList.toggle("wide", v==="core" && CORE_SUB==="board");
+  if (v==="core") showCoreSub(CORE_SUB);
+  else if (v==="team") loadTeam();
+  else if (v==="events") loadEvents();
+  else if (v==="replies") loadReplies();
+  else if (v==="knowledge") showKnowSub(KNOW_SUB);
+  closeNav();
+});
+
+// --- core sub-nav: Board (default) vs Details & provenance ---
+function showCoreSub(sub){
+  CORE_SUB = sub;
+  document.querySelectorAll("#coreSubNav button").forEach(x =>
+    x.classList.toggle("active", x.dataset.sub === sub));
+  document.getElementById("coreBoard").classList.toggle("hide", sub !== "board");
+  document.getElementById("coreDetails").classList.toggle("hide", sub !== "details");
+  document.querySelector("main").classList.toggle("wide", sub === "board");
+  if (sub === "board") loadBoard(); else loadCore();
+}
+document.querySelectorAll("#coreSubNav button").forEach(b =>
+  b.onclick = () => showCoreSub(b.dataset.sub));
+document.getElementById("boardRefresh").onclick = loadBoard;
+
+// --- agile board ---
+const COL_KEYS = ["backlog", "in_progress", "done"];
+const COL_LABEL = { backlog: "Backlog", in_progress: "In Progress", done: "Done" };
+
+async function loadBoard(){
+  for (const k of COL_KEYS){
+    document.getElementById("col-"+k).innerHTML = '<p class="muted" style="text-align:center">loading…</p>';
+  }
+  let data;
+  try { data = await api("/api/core/board"); }
+  catch(e){
+    if (e.auth) return showGate("token rejected");
+    for (const k of COL_KEYS){
+      document.getElementById("col-"+k).innerHTML =
+        '<p class="muted">error: '+escapeHtml(e.message)+'</p>';
+    }
+    document.getElementById("approveLane").classList.add("hide");
+    return;
+  }
+  renderApprovalLane(data.needs_approval || []);
+  renderStaleApprovals(data.stale_approvals || []);
+  renderArchive(data.archived || []);
+  const cols = data.columns || {};
+  for (const k of COL_KEYS){
+    const list = cols[k] || [];
+    document.getElementById("cnt-"+k).textContent = list.length;
+    const box = document.getElementById("col-"+k);
+    box.innerHTML = "";
+    if (!list.length){
+      box.innerHTML = '<div class="empty">No tasks</div>';
+    } else {
+      for (const t of list) box.appendChild(renderTaskCard(t));
+    }
+  }
+  COREVIEW_LOADED = true;
+}
+
+// The prominent high-risk approval lane above the columns.
+function renderApprovalLane(list){
+  const lane = document.getElementById("approveLane");
+  if (!list.length){ lane.classList.add("hide"); lane.innerHTML = ""; return; }
+  lane.classList.remove("hide");
+  lane.innerHTML = `<h3>⚠ Needs approval <span class="cnt">${list.length}</span></h3>`;
+  for (const t of list){
+    const row = document.createElement("div"); row.className = "aprow";
+    const label = t.label || "(no label)";
+    const ask = (t.ask || "").trim();
+    // A MISSING ask is shown as the label PLUS a line saying the ask is
+    // missing. Rendering nothing would leave a blank row, and a blank row
+    // reads as a question that has already been answered.
+    const head = ask
+      ? `<span class="lbl">${escapeHtml(ask)}</span>`
+      : `<span class="lbl noask">${escapeHtml(label)}</span>`;
+    const rec = (t.recommend || "").trim();
+    row.innerHTML =
+      `<div class="apbody">`
+      + `<div class="aphead">${priorityChip(t.priority)}${projectChip(t.project)}`
+      + head + `${riskChip(t.risk)}${assigneeChip(t.assignee)}</div>`
+      // A MISSING recommendation is DECLARED too, for the same reason the
+      // missing ask is: the recommendation carries what happens BY DEFAULT if
+      // nobody answers, and rendering nothing there presents "no default was
+      // stated" as if it were "no default is needed". Not answering is itself
+      // an outcome, and it should be one the reader chose knowingly.
+      + (rec ? `<div class="aprec"><b>Recommends:</b> ${escapeHtml(rec)}</div>`
+             : `<div class="apmiss">No recommendation or default recorded — if`
+               + ` you do not answer, this task simply waits (the heartbeat`
+               + ` skips approval=needed), for as long as that takes.</div>`)
+      + (ask ? "" : `<div class="apmiss">No one-line ask recorded — this is the`
+                    + ` raw task brief. Ask the owning coordinator to run`
+                    + ` <code>heartbeat ask</code>.</div>`)
+      + (ask ? `<details class="apdet"><summary>full task brief</summary>`
+               + `<div>${escapeHtml(label)}</div></details>` : "")
+      + `</div>`;
+    const ok = document.createElement("button"); ok.textContent = "Approve"; ok.className = "ok sm";
+    const no = document.createElement("button"); no.textContent = "Reject"; no.className = "bad sm";
+    ok.onclick = () => approveTask(t.id);
+    no.onclick = () => rejectTask(t.id);
+    row.appendChild(ok); row.appendChild(no);
+    lane.appendChild(row);
+  }
+}
+
+// Tasks marked DONE that still carry approval='needed'. They are NOT decisions
+// waiting on anyone — they are a stale flag a coordinator forgot to clear — so
+// they are kept out of the lane above. But they are not hidden either: dropping
+// them silently is what would make the inconsistency permanent, and it is the
+// count that says whether the lane can be trusted.
+function renderStaleApprovals(list){
+  const lane = document.getElementById("staleApprovals");
+  if (!list.length){ lane.classList.add("hide"); lane.innerHTML = ""; return; }
+  lane.classList.remove("hide");
+  lane.innerHTML = `<h4>${list.length} done task(s) still flagged "needs approval"`
+    + ` — a stale flag, not a decision. Nothing is waiting on you here.</h4>`;
+  for (const t of list){
+    const row = document.createElement("div"); row.className = "aprow";
+    row.innerHTML = `${projectChip(t.project)}`
+      + `<span class="lbl">${escapeHtml(t.label||"(no label)")}</span>`;
+    const clear = document.createElement("button");
+    clear.textContent = "Clear flag"; clear.className = "sm";
+    clear.onclick = () => clearApproval(t.id);
+    row.appendChild(clear);
+    lane.appendChild(row);
+  }
+}
+
+// The collapsible Archive section (below the columns). Collapsed by default so
+// the live board stays clean; lists archived cards with a why-badge + Restore.
+function renderArchive(list){
+  document.getElementById("cnt-archived").textContent = list.length;
+  const body = document.getElementById("archiveBody");
+  body.innerHTML = "";
+  if (!list.length){ body.innerHTML = '<div class="empty">Nothing archived</div>'; return; }
+  for (const t of list){
+    const row = document.createElement("div"); row.className = "archrow";
+    const reason = t.archive_reason || "";
+    const why = reason === "not_relevant"
+      ? '<span class="chip arch-not_relevant">not relevant</span>'
+      : reason === "done" ? '<span class="chip arch-done">done ✓</span>' : "";
+    row.innerHTML = `${priorityChip(t.priority)}<span class="lbl">${escapeHtml(t.label||"(no label)")}</span>${why}`;
+    const restore = document.createElement("button");
+    restore.textContent = "Restore"; restore.className = "sm";
+    restore.onclick = () => unarchiveTask(t.id);
+    row.appendChild(restore);
+    body.appendChild(row);
+  }
+}
+// Archive collapse toggle (stays collapsed across refreshes).
+document.getElementById("archiveToggle").onclick = () => {
+  const btn = document.getElementById("archiveToggle");
+  const open = btn.getAttribute("aria-expanded") === "true";
+  btn.setAttribute("aria-expanded", open ? "false" : "true");
+  document.getElementById("archiveBody").classList.toggle("hide", open);
+};
+
+function priorityChip(p){ const c=(p||"P3").toLowerCase(); return `<span class="chip ${escapeHtml(c)}">${escapeHtml(p||"P3")}</span>`; }
+function assigneeChip(a){ a=a||"unassigned"; const t={ai:"AI",human:"Human",unassigned:"Unassigned"}[a]||a;
+  return `<span class="chip ${escapeHtml(a)}">${escapeHtml(t)}</span>`; }
+function riskChip(r){ if(!r) return ""; return `<span class="chip risk${escapeHtml(r)}">${escapeHtml(r)} risk</span>`; }
+// WHO IS ASKING. One shared board across every project, so a decision row
+// without its module is an anonymous demand. A task with no project slice says
+// so out loud rather than rendering nothing — an unlabelled row would be
+// indistinguishable from a platform one.
+function projectChip(p){ return `<span class="chip ${p?"proj":"noproj"}">${escapeHtml(p||"no project")}</span>`; }
+
+function renderTaskCard(t){
+  const div = document.createElement("div");
+  div.className = "tcard";
+  div.draggable = true;
+  div.dataset.id = t.id;
+  const chips = [];
+  chips.push(priorityChip(t.priority));
+  chips.push(assigneeChip(t.assignee));
+  if (t.risk) chips.push(riskChip(t.risk));
+  // AI-assigned tasks that auto-started show a subtle indicator while in progress.
+  if (t.assignee === "ai" && t.status === "in_progress") chips.push('<span class="chip auto">⚡ auto-started</span>');
+  if (t.due_date) chips.push(`<span class="chip due">📅 ${escapeHtml(t.due_date)}</span>`);
+  for (const tag of (t.tags||[])) chips.push(`<span class="chip tag">#${escapeHtml(tag)}</span>`);
+  div.innerHTML =
+    `<div class="lbl">${escapeHtml(t.label||"(no label)")}</div>`
+    + `<div class="chips">${chips.join("")}</div>`
+    + `<div class="cardacts"></div>`;
+  const acts = div.querySelector(".cardacts");
+  const mk = (label, cls, fn) => { const b=document.createElement("button");
+    b.textContent=label; b.className="sm "+cls; b.onclick=fn; return b; };
+
+  if ((t.assignee||"unassigned") === "unassigned"){
+    acts.appendChild(mk("Assign AI", "", () => assignTask(t.id, "ai")));
+    acts.appendChild(mk("Assign Human", "", () => assignTask(t.id, "human")));
+  }
+  if (t.approval === "needed"){
+    acts.appendChild(mk("Approve", "ok", () => approveTask(t.id)));
+    acts.appendChild(mk("Reject", "bad", () => rejectTask(t.id)));
+  }
+  // Move controls (◀ ▶) — robust companion to drag-and-drop.
+  const i = COL_KEYS.indexOf(t.status);
+  if (i > 0) acts.appendChild(mk("◀ "+COL_LABEL[COL_KEYS[i-1]], "", () => moveTask(t.id, COL_KEYS[i-1])));
+  if (i >= 0 && i < COL_KEYS.length-1) acts.appendChild(mk(COL_LABEL[COL_KEYS[i+1]]+" ▶", "", () => moveTask(t.id, COL_KEYS[i+1])));
+  // Archive actions: file the task away off the board.
+  //  · Not relevant → won't-do   · Done ✓ → already done, then filed away.
+  acts.appendChild(mk("Not relevant", "bad", () => archiveTask(t.id, "not_relevant")));
+  acts.appendChild(mk("Done ✓", "ok", () => archiveTask(t.id, "done")));
+
+  // HTML5 drag-and-drop.
+  div.addEventListener("dragstart", ev => {
+    ev.dataTransfer.setData("text/plain", t.id);
+    ev.dataTransfer.effectAllowed = "move";
+    div.classList.add("dragging");
+  });
+  div.addEventListener("dragend", () => div.classList.remove("dragging"));
+  return div;
+}
+
+// Wire the column drop-zones once.
+COL_KEYS.forEach(k => {
+  const box = document.getElementById("col-"+k);
+  box.addEventListener("dragover", ev => { ev.preventDefault(); box.classList.add("dragover"); });
+  box.addEventListener("dragleave", () => box.classList.remove("dragover"));
+  box.addEventListener("drop", ev => {
+    ev.preventDefault(); box.classList.remove("dragover");
+    const id = ev.dataTransfer.getData("text/plain");
+    if (id) moveTask(id, k);
+  });
+});
+
+async function boardAction(path, okMsg){
+  try {
+    const r = await api(path, {method:"POST"});
+    toast(okMsg || "done");
+    loadBoard();
+    return r;
+  } catch(e){
+    if (e.auth) return showGate("token rejected");
+    toast("Failed: "+e.message);
+  }
+}
+async function assignTask(id, who){
+  const r = await boardAction(`/api/core/task/${encodeURIComponent(id)}/assign/${who}`,
+    who==="ai" ? "Assigned to AI" : "Assigned to human");
+  if (r && r.needs_approval) toast("High-risk — moved to the Needs-approval lane.");
+  else if (r && r.auto_started) toast("Low-risk AI task auto-started.");
+}
+function approveTask(id){ boardAction(`/api/core/task/${encodeURIComponent(id)}/approve`, "Approved ✓"); }
+function rejectTask(id){ boardAction(`/api/core/task/${encodeURIComponent(id)}/reject`, "Rejected"); }
+function clearApproval(id){ boardAction(`/api/core/task/${encodeURIComponent(id)}/clear-approval`, "Stale flag cleared"); }
+function moveTask(id, col){ boardAction(`/api/core/task/${encodeURIComponent(id)}/move/${col}`, "Moved to "+COL_LABEL[col]); }
+function archiveTask(id, reason){ boardAction(`/api/core/task/${encodeURIComponent(id)}/archive/${reason}`,
+  reason==="not_relevant" ? "Filed away — not relevant" : "Filed away — done ✓"); }
+function unarchiveTask(id){ boardAction(`/api/core/task/${encodeURIComponent(id)}/unarchive`, "Restored to backlog"); }
+
+async function loadCore(){
+  let snap;
+  try { snap = await api("/api/core/snapshot"); }
+  catch(e){ if(e.auth) return showGate("token rejected"); toast("Core load failed: "+e.message); return; }
+  const missing = document.getElementById("coreMissing");
+  missing.classList.toggle("hide", snap.core_db !== false);
+
+  // header counts
+  const tc = document.getElementById("coreTypeCounts"); tc.innerHTML="";
+  const bt = (snap.totals&&snap.totals.by_type)||{};
+  for (const k of ["task","event","artifact","worker"]){
+    tc.insertAdjacentHTML("beforeend",
+      `<div class="count"><span class="n">${bt[k]||0}</span><span class="k">${k}</span></div>`);
+  }
+  const trc = document.getElementById("coreTrustCounts"); trc.innerHTML="";
+  const btr = (snap.totals&&snap.totals.by_trust)||{};
+  for (const k of ["proposed","confirmed","rejected"]){
+    trc.insertAdjacentHTML("beforeend",
+      `<div class="count"><span class="n">${btr[k]||0}</span><span class="k">${k}</span></div>`);
+  }
+
+  renderPending(snap.pending_confirm||[]);
+  renderTags(snap.tags||{});
+  renderDeps(snap.dependencies||[]);
+  loadCoreEntities();
+  COREVIEW_LOADED = true;
+}
+
+function badge(type){ return `<span class="badge ${escapeHtml(type||"")}">${escapeHtml(type||"?")}</span>`; }
+
+function renderPending(list){
+  const box = document.getElementById("corePending"); box.innerHTML="";
+  if (!list.length){ box.innerHTML='<p class="muted">nothing pending — queue is clear</p>'; return; }
+  for (const p of list){
+    const div = document.createElement("div"); div.className="entrow"; div.style.cursor="default";
+    div.innerHTML = `${badge(p.type)}<span class="lbl">${escapeHtml(p.label||"(no label)")}</span>`;
+    const ok=document.createElement("button"); ok.textContent="Confirm"; ok.className="ok";
+    const no=document.createElement("button"); no.textContent="Reject"; no.className="bad";
+    ok.onclick=()=>coreDecide(p.id,"confirm",div);
+    no.onclick=()=>coreDecide(p.id,"reject",div);
+    div.appendChild(ok); div.appendChild(no);
+    box.appendChild(div);
+  }
+}
+
+async function coreDecide(eid, decision, div){
+  div.querySelectorAll("button").forEach(b=>b.disabled=true);
+  try {
+    const res = await api(`/api/core/entity/${encodeURIComponent(eid)}/${decision}`, {method:"POST"});
+    toast(`${decision}ed ✓ trust → ${res.trust}`);
+    loadCore();  // refresh queue + counts
+  } catch(e){
+    if(e.auth) return showGate("token rejected");
+    div.querySelectorAll("button").forEach(b=>b.disabled=false);
+    toast("Failed: "+e.message);
+  }
+}
+
+function renderTags(tags){
+  const box = document.getElementById("coreTags"); box.innerHTML="";
+  const names = Object.keys(tags);
+  if (!names.length){ box.innerHTML='<p class="muted">no tags</p>'; return; }
+  for (const name of names){
+    const info = tags[name];
+    const bits = Object.entries(info.by_type||{}).map(([k,v])=>`${k}:${v}`).join(", ");
+    const meta = info.meta_artifact ? ' <span class="pill cl">meta ✓</span>' : "";
+    const div = document.createElement("div"); div.className="tagrow";
+    div.innerHTML = `<span class="name">#${escapeHtml(name)}</span>`
+      + `<span class="muted" style="font-size:12px">${info.total} (${escapeHtml(bits)})</span>${meta}`;
+    div.onclick=()=>loadTag(name);
+    box.appendChild(div);
+  }
+}
+
+async function loadTag(name){
+  const box = document.getElementById("coreTagDetail");
+  box.classList.remove("hide"); box.innerHTML='<p class="muted">loading…</p>';
+  let res;
+  try { res = await api("/api/core/tag/"+encodeURIComponent(name)); }
+  catch(e){ if(e.auth) return showGate("token rejected"); box.innerHTML='<p class="muted">error: '+escapeHtml(e.message)+'</p>'; return; }
+  let html = `<h2 style="margin-bottom:8px">#${escapeHtml(name)} — ${res.members.length} members</h2>`;
+  if (res.meta_artifact){
+    html += `<div class="dlabel muted">meta-artifact</div><div class="metacontent">${escapeHtml(res.meta_artifact)}</div>`;
+  }
+  html += res.members.map(m =>
+    `<div class="entrow" onclick="loadEntity('${m.id}')">${badge(m.type)}`
+    + `<span class="lbl">${escapeHtml(m.label||"(no label)")}</span>`
+    + `${badge(m.trust)}</div>`).join("");
+  box.innerHTML = html;
+}
+
+async function loadCoreEntities(){
+  const type = document.getElementById("coreFilterType").value;
+  const trust = document.getElementById("coreFilterTrust").value;
+  const box = document.getElementById("coreEntities"); box.innerHTML='<p class="muted">loading…</p>';
+  const qs = [];
+  if (type) qs.push("type="+encodeURIComponent(type));
+  if (trust) qs.push("trust="+encodeURIComponent(trust));
+  let res;
+  try { res = await api("/api/core/entities"+(qs.length?"?"+qs.join("&"):"")); }
+  catch(e){ if(e.auth) return showGate("token rejected"); box.innerHTML='<p class="muted">error: '+escapeHtml(e.message)+'</p>'; return; }
+  const ents = res.entities||[];
+  if (!ents.length){ box.innerHTML='<p class="muted">no entities</p>'; return; }
+  box.innerHTML="";
+  for (const e of ents){
+    const div = document.createElement("div"); div.className="entrow";
+    div.innerHTML = `${badge(e.type)}<span class="lbl">${escapeHtml(e.label||"(no label)")}</span>${badge(e.trust)}`;
+    div.onclick=()=>loadEntity(e.id);
+    box.appendChild(div);
+  }
+}
+document.getElementById("coreEntitiesRefresh").onclick = loadCoreEntities;
+document.getElementById("coreFilterType").onchange = loadCoreEntities;
+document.getElementById("coreFilterTrust").onchange = loadCoreEntities;
+
+async function loadEntity(eid){
+  const box = document.getElementById("coreEntityDetail");
+  box.classList.remove("hide"); box.innerHTML='<p class="muted">loading…</p>';
+  let d;
+  try { d = await api("/api/core/entity/"+encodeURIComponent(eid)); }
+  catch(e){ if(e.auth) return showGate("token rejected"); box.innerHTML='<p class="muted">error: '+escapeHtml(e.message)+'</p>'; return; }
+  const refLine = r => `${badge(r.type)} ${escapeHtml(r.label||r.id)}`;
+  let html = `<h2 style="margin-bottom:8px">${badge(d.type)} ${escapeHtml(d.label||"(no label)")} ${badge(d.trust)}</h2>`;
+  html += `<div class="kv"><b>id:</b> ${escapeHtml(d.id)}</div>`;
+  for (const [k,v] of Object.entries(d.payload||{})){
+    if (v===null || v==="" ) continue;
+    html += `<div class="kv"><b>${escapeHtml(k)}:</b> ${escapeHtml(String(v))}</div>`;
+  }
+  if ((d.tags||[]).length) html += `<div class="kv"><b>tags:</b> ${d.tags.map(t=>escapeHtml(t)).join(", ")}</div>`;
+  const section = (title, arr) => arr && arr.length
+    ? `<div class="dlabel muted">${title}</div>` + arr.map(r=>`<div class="kv">${refLine(r)}</div>`).join("")
+    : "";
+  html += section("blocks", d.blocks);
+  html += section("depends on", d.depends_on);
+  html += section("provenance (justified by)", d.provenance);
+  for (const [et, arr] of Object.entries(d.edges||{})){
+    html += section(et, arr);
+  }
+  // proposed entities are actionable straight from the detail panel
+  if (d.trust === "proposed"){
+    html += `<div class="acts" style="margin-top:10px"></div>`;
+  }
+  box.innerHTML = html;
+  if (d.trust === "proposed"){
+    const acts = box.querySelector(".acts");
+    const ok=document.createElement("button"); ok.textContent="Confirm"; ok.className="ok";
+    const no=document.createElement("button"); no.textContent="Reject"; no.className="bad";
+    ok.onclick=()=>coreDecide(d.id,"confirm",box);
+    no.onclick=()=>coreDecide(d.id,"reject",box);
+    acts.appendChild(ok); acts.appendChild(no);
+  }
+}
+
+function renderDeps(deps){
+  const box = document.getElementById("coreDeps"); box.innerHTML="";
+  if (!deps.length){ box.innerHTML='<p class="muted">no dependency edges</p>'; return; }
+  for (const d of deps){
+    box.insertAdjacentHTML("beforeend",
+      `<div class="deprow">${escapeHtml(d.blocker)} <span class="muted">⟶ blocks ⟶</span> ${escapeHtml(d.blocks)}</div>`);
+  }
+}
+
+// --- team / roster ---
+const ROLE_OPTS = ["member", "admin", "owner"];
+
+async function loadTeam(){
+  const box = document.getElementById("teamList");
+  box.innerHTML = '<p class="muted">loading…</p>';
+  let res;
+  try { res = await api("/api/core/workers"); }
+  catch(e){ if(e.auth) return showGate("token rejected"); box.innerHTML='<p class="muted">error: '+escapeHtml(e.message)+'</p>'; return; }
+  document.getElementById("teamMissing").classList.toggle("hide", res.core_db !== false);
+  const workers = res.workers || [];
+  box.innerHTML = "";
+  if (!workers.length){ box.innerHTML='<p class="muted">no workers yet — add one above</p>'; return; }
+  for (const w of workers) box.appendChild(renderWorker(w));
+}
+
+function renderWorker(w){
+  const div = document.createElement("div"); div.className="entrow"; div.style.cursor="default";
+  const roleBadge = `<span class="badge ${escapeHtml(w.role)}">${escapeHtml(w.role)}</span>`;
+  const kindBadge = `<span class="badge ${escapeHtml(w.kind)}">${escapeHtml(w.kind)}</span>`;
+  const activeBadge = w.active ? "" : ` <span class="badge inactive">inactive</span>`;
+  const meta = [];
+  if (w.capabilities) meta.push(escapeHtml(w.capabilities));
+  if (w.channel) meta.push("📡 "+escapeHtml(w.channel));
+  div.innerHTML =
+    `${kindBadge}${roleBadge}${activeBadge}`
+    + `<span class="lbl">${escapeHtml(w.name||"(no name)")}`
+    + (meta.length?` <span class="muted" style="font-size:12px">— ${meta.join(" · ")}</span>`:"")
+    + `</span>`;
+  // role selector
+  const sel = document.createElement("select"); sel.style.maxWidth="120px";
+  for (const r of ROLE_OPTS){ const o=document.createElement("option"); o.value=r; o.textContent=r; if(r===w.role) o.selected=true; sel.appendChild(o); }
+  sel.onchange = () => setWorkerRole(w.id, sel.value);
+  div.appendChild(sel);
+  // activate / deactivate
+  const tog = document.createElement("button"); tog.className="sm";
+  tog.textContent = w.active ? "Deactivate" : "Activate";
+  tog.onclick = () => setWorkerActive(w.id, w.active ? 0 : 1);
+  div.appendChild(tog);
+  // remove
+  const rm = document.createElement("button"); rm.className="sm bad"; rm.textContent="Remove";
+  rm.onclick = () => removeWorker(w.id, w.name);
+  div.appendChild(rm);
+  return div;
+}
+
+async function teamAction(path, opts, okMsg){
+  try {
+    await api(path, opts);
+    if (okMsg) toast(okMsg);
+    loadTeam();
+  } catch(e){ if(e.auth) return showGate("token rejected"); toast("Failed: "+e.message); }
+}
+function setWorkerRole(id, role){ teamAction(`/api/core/workers/${encodeURIComponent(id)}/role/${role}`, {method:"POST"}, "Role → "+role); }
+function setWorkerActive(id, active){ teamAction(`/api/core/workers/${encodeURIComponent(id)}/active/${active}`, {method:"POST"}, active?"Activated":"Deactivated"); }
+function removeWorker(id, name){ if(!confirm("Remove worker "+(name||"")+"?")) return;
+  teamAction(`/api/core/workers/${encodeURIComponent(id)}`, {method:"DELETE"}, "Removed"); }
+
+document.getElementById("teamRefresh").onclick = loadTeam;
+document.getElementById("wAdd").onclick = async () => {
+  const name = document.getElementById("wName").value.trim();
+  if (!name){ toast("Name is required"); return; }
+  const body = { name,
+    kind: document.getElementById("wKind").value,
+    role: document.getElementById("wRole").value,
+    capabilities: document.getElementById("wCaps").value.trim() || null,
+    channel: document.getElementById("wChannel").value.trim() || null };
+  try {
+    await api("/api/core/workers", {method:"POST", body});
+    document.getElementById("wName").value = "";
+    document.getElementById("wCaps").value = "";
+    document.getElementById("wChannel").value = "";
+    toast("Worker onboarded ✓");
+    loadTeam();
+  } catch(e){ if(e.auth) return showGate("token rejected"); toast("Add failed: "+e.message); }
+};
+
+// ===================== KNOWLEDGE =====================
+let KNOW_SUB = "list";
+let KNOW_LIST_LOADED = false;
+let GRAPH_RAF = null;                 // active graph animation frame
+let DRAG_NODE = null, DRAG_MOVED = false;
+const KTYPE_COLOR = { task:"#059669", event:"#d97706", artifact:"#7c3aed", worker:"#0ea5b7", tag:"#d6dbe0" };
+
+function stateBadge(s){ s=(s||"raw").toLowerCase();
+  const cls = ["raw","distilled","canonical"].includes(s) ? s : "raw";
+  return `<span class="sbadge ${cls}">${escapeHtml(s)}</span>`; }
+
+// --- sub-nav: List (default) vs Graph ---
+function showKnowSub(sub){
+  KNOW_SUB = sub;
+  document.querySelectorAll("#knowSubNav button").forEach(x =>
+    x.classList.toggle("active", x.dataset.sub === sub));
+  document.getElementById("knowList").classList.toggle("hide", sub !== "list");
+  document.getElementById("knowGraph").classList.toggle("hide", sub !== "graph");
+  document.querySelector("main").classList.toggle("wide", sub === "graph");
+  if (sub !== "graph" && GRAPH_RAF){ cancelAnimationFrame(GRAPH_RAF); GRAPH_RAF=null; }
+  if (sub === "list") loadKnowledge();
+  else loadGraph();
+}
+document.querySelectorAll("#knowSubNav button").forEach(b =>
+  b.onclick = () => showKnowSub(b.dataset.sub));
+
+// --- List sub-view ---
+let KSEARCH_T = null;
+function kDebounced(){ clearTimeout(KSEARCH_T); KSEARCH_T = setTimeout(loadKnowledge, 280); }
+document.getElementById("kSearch").oninput = kDebounced;
+document.getElementById("kTag").oninput = kDebounced;
+document.getElementById("kState").onchange = loadKnowledge;
+document.getElementById("kRefresh").onclick = loadKnowledge;
+
+async function loadKnowledge(){
+  const box = document.getElementById("kResults");
+  box.innerHTML = '<p class="muted">loading…</p>';
+  const q = document.getElementById("kSearch").value.trim();
+  const state = document.getElementById("kState").value;
+  const tag = document.getElementById("kTag").value.trim().replace(/^#/,"");
+  const qs = [];
+  if (q) qs.push("q="+encodeURIComponent(q));
+  if (state) qs.push("state="+encodeURIComponent(state));
+  if (tag) qs.push("tag="+encodeURIComponent(tag));
+  let res;
+  try { res = await api("/api/core/knowledge"+(qs.length?"?"+qs.join("&"):"")); }
+  catch(e){ if(e.auth) return showGate("token rejected");
+    box.innerHTML='<p class="muted">error: '+escapeHtml(e.message)+'</p>'; return; }
+  const missing = document.getElementById("kCoreMissing");
+  const noCore = res.core_db === false;
+  missing.classList.toggle("hide", !noCore);
+  if (noCore) missing.textContent = "No core.db yet — no Information Artifacts on this host.";
+  const arts = res.artifacts || [];
+  if (!arts.length){
+    const filtered = q || state || tag;
+    box.innerHTML = '<div class="empty">'
+      + (noCore ? "Nothing to show — core hasn't been populated."
+                : filtered ? "No artifacts match your filters." : "No Information Artifacts yet.")
+      + '</div>';
+    return;
+  }
+  box.innerHTML = "";
+  for (const a of arts) box.appendChild(renderKCard(a));
+  KNOW_LIST_LOADED = true;
+}
+
+function renderKCard(a){
+  const div = document.createElement("div"); div.className = "kcard";
+  div.tabIndex = 0;
+  const tags = (a.tags||[]).map(t=>`<span class="tagchip">#${escapeHtml(t)}</span>`).join("");
+  div.innerHTML =
+    `<div class="khead">${stateBadge(a.state)}`
+    + `<span class="ktitle">${escapeHtml(a.title||"(untitled)")}</span>`
+    + (a.has_content ? `<span class="khint">📄 has content</span>` : "")
+    + `</div>`
+    + (a.snippet ? `<div class="ksnip">${escapeHtml(a.snippet)}</div>` : "")
+    + (tags ? `<div class="kmeta">${tags}</div>` : "");
+  div.onclick = () => openArtifact(a.id);
+  div.onkeydown = e => { if (e.key==="Enter"||e.key===" "){ e.preventDefault(); openArtifact(a.id); } };
+  return div;
+}
+
+// --- Artifact reader (slide-over): content + provenance + connections ---
+function openReader(){
+  document.getElementById("readerScrim").classList.add("show");
+  const r = document.getElementById("reader");
+  r.classList.add("show"); r.setAttribute("aria-hidden","false");
+}
+function closeReader(){
+  document.getElementById("readerScrim").classList.remove("show");
+  const r = document.getElementById("reader");
+  r.classList.remove("show"); r.setAttribute("aria-hidden","true");
+}
+document.getElementById("readerClose").onclick = closeReader;
+document.getElementById("readerScrim").onclick = closeReader;
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape"){ closeReader(); hideGPop(); }
+});
+
+async function openArtifact(id){
+  openReader();
+  document.getElementById("readerTitle").textContent = "Loading…";
+  const body = document.getElementById("readerBody");
+  body.innerHTML = '<p class="muted">loading…</p>';
+  let d;
+  try { d = await api("/api/core/artifact/"+encodeURIComponent(id)); }
+  catch(e){
+    if(e.auth){ closeReader(); return showGate("token rejected"); }
+    document.getElementById("readerTitle").textContent = "Not an artifact";
+    body.innerHTML = '<p class="muted">This entity isn\'t an Information Artifact, or is unknown.</p>'
+      + '<p class="muted" style="font-size:12px">'+escapeHtml(e.message)+'</p>';
+    return;
+  }
+  document.getElementById("readerTitle").textContent = d.title || "(untitled)";
+  const tags = (d.tags||[]).map(t=>`<span class="tagchip">#${escapeHtml(t)}</span>`).join("");
+  let html = `<div class="rmeta">${stateBadge(d.state)}${tags}</div>`;
+  html += `<div class="rcontent">${escapeHtml(d.content||"(no content)")}</div>`;
+  const linkRow = (r, extra) =>
+    `<div class="rlink" data-open="${escapeHtml(r.id)}" tabindex="0">`
+    + `<span class="lbl">${escapeHtml(r.title||r.id)}</span>${extra||""}</div>`;
+  if ((d.provenance||[]).length){
+    html += `<div class="rsection"><h3>Provenance · derived from</h3>`
+      + d.provenance.map(r=>linkRow(r)).join("") + `</div>`;
+  }
+  if ((d.links||[]).length){
+    html += `<div class="rsection"><h3>Connections</h3>`
+      + d.links.map(r => linkRow(r,
+          `<span class="ldir">${escapeHtml(r.type||"link")}${r.dir?" · "+escapeHtml(r.dir):""}</span>`)).join("")
+      + `</div>`;
+  }
+  body.innerHTML = html;
+  body.querySelectorAll(".rlink[data-open]").forEach(el => {
+    el.onclick = () => openArtifact(el.dataset.open);
+    el.onkeydown = e => { if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openArtifact(el.dataset.open); } };
+  });
+  body.scrollTop = 0;
+}
+
+// --- Graph sub-view (vanilla force-directed, inline SVG) ---
+document.getElementById("gRefresh").onclick = loadGraph;
+document.getElementById("gTag").addEventListener("keydown", e => { if(e.key==="Enter") loadGraph(); });
+function hideGPop(){ const p=document.getElementById("gPop"); if(p) p.style.display="none"; }
+
+async function loadGraph(){
+  if (GRAPH_RAF){ cancelAnimationFrame(GRAPH_RAF); GRAPH_RAF=null; }
+  hideGPop();
+  const wrap = document.getElementById("graphWrap");
+  const oldSvg = wrap.querySelector("svg"); if (oldSvg) oldSvg.remove();
+  const oldMsg = wrap.querySelector(".empty"); if (oldMsg) oldMsg.remove();
+  const note = document.getElementById("gNote"); note.classList.add("hide");
+  const tag = document.getElementById("gTag").value.trim().replace(/^#/,"");
+  let data;
+  try { data = await api("/api/core/graph"+(tag?"?tag="+encodeURIComponent(tag):"")); }
+  catch(e){ if(e.auth) return showGate("token rejected");
+    wrap.insertAdjacentHTML("beforeend",
+      '<div class="empty" style="margin:26px">error: '+escapeHtml(e.message)+'</div>'); return; }
+  const nodes = (data.nodes||[]).map(n => Object.assign({}, n));
+  if (!nodes.length){
+    wrap.insertAdjacentHTML("beforeend", '<div class="empty" style="margin:26px">'
+      + (data.core_db===false ? "No core.db yet — nothing to graph."
+                              : "No connected knowledge to graph yet.")+'</div>');
+    return;
+  }
+  note.textContent = "showing "+nodes.length+" node"+(nodes.length===1?"":"s")
+    + (data.truncated ? " (truncated)" : "");
+  note.classList.remove("hide");
+  buildGraph(wrap, nodes, data.links||[]);
+}
+
+function buildGraph(wrap, nodes, rawLinks){
+  const W = wrap.clientWidth || 900, H = 600;
+  const byId = {}; nodes.forEach(n => byId[n.id] = n);
+  const links = [];
+  for (const l of rawLinks){
+    const s = byId[l.source], t = byId[l.target];
+    if (s && t && s!==t) links.push({source:s, target:t, type:l.type});
+  }
+  // seed positions on a jittered circle; compute degree for sizing
+  nodes.forEach((n,i) => {
+    const ang = (i/nodes.length)*Math.PI*2, rad = Math.min(W,H)*0.34;
+    n.x = W/2 + Math.cos(ang)*rad*(0.55+Math.random()*0.45);
+    n.y = H/2 + Math.sin(ang)*rad*(0.55+Math.random()*0.45);
+    n.vx = 0; n.vy = 0; n.deg = 0;
+  });
+  links.forEach(l => { l.source.deg++; l.target.deg++; });
+
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(NS,"svg");
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const view = document.createElementNS(NS,"g"); svg.appendChild(view);
+  const gLinks = document.createElementNS(NS,"g"); view.appendChild(gLinks);
+  const gNodes = document.createElementNS(NS,"g"); view.appendChild(gNodes);
+  wrap.appendChild(svg);
+
+  const lineEls = links.map(l => {
+    const el = document.createElementNS(NS,"line");
+    if (l.type === "tagged"){
+      // membership links: lighter + dashed so entity->entity edges stand out
+      el.setAttribute("stroke", "#b9c2cc");
+      el.setAttribute("stroke-width", "1.1");
+      el.setAttribute("stroke-opacity", "0.5");
+      el.setAttribute("stroke-dasharray", "4 4");
+    } else {
+      el.setAttribute("stroke", l.type==="blocks" ? "#d98a84" : "#c4d0cb");
+      el.setAttribute("stroke-width", "1.4");
+      el.setAttribute("stroke-opacity", "0.75");
+    }
+    gLinks.appendChild(el); return el;
+  });
+
+  const nodeEls = nodes.map(n => {
+    const g = document.createElementNS(NS,"g"); g.style.cursor = "pointer";
+    const raw = n.label || n.id || "";
+    const label = raw.length > 24 ? raw.slice(0,23)+"…" : raw;
+    if (n.type === "tag"){
+      // tag nodes: a silver rounded pill with the tag inside — visually
+      // distinct from the task/event/artifact/worker dots that cluster on it.
+      const w = Math.max(48, label.length*6.6 + 20), h = 22; n.r = w/2;
+      const c = document.createElementNS(NS,"rect");
+      c.setAttribute("x", -w/2); c.setAttribute("y", -h/2);
+      c.setAttribute("width", w); c.setAttribute("height", h);
+      c.setAttribute("rx", 11); c.setAttribute("ry", 11);
+      c.setAttribute("fill", KTYPE_COLOR.tag);
+      c.setAttribute("stroke", "#8b95a1"); c.setAttribute("stroke-width", "1.25");
+      const tx = document.createElementNS(NS,"text");
+      tx.setAttribute("class", "gtag-label");
+      tx.setAttribute("text-anchor", "middle");
+      tx.setAttribute("dy", "3.6");
+      tx.textContent = label;
+      g.appendChild(c); g.appendChild(tx); gNodes.appendChild(g);
+      return { g, c, tx, n };
+    }
+    const r = 6 + Math.min(9, (n.deg||0)*1.5); n.r = r;
+    const c = document.createElementNS(NS,"circle");
+    c.setAttribute("r", r);
+    c.setAttribute("fill", KTYPE_COLOR[n.type] || "#94a3b8");
+    c.setAttribute("stroke", "#fff"); c.setAttribute("stroke-width", "1.5");
+    const tx = document.createElementNS(NS,"text");
+    tx.setAttribute("class", "gnode-label");
+    tx.setAttribute("text-anchor", "middle");
+    tx.setAttribute("dy", -(r+5));
+    tx.textContent = label;
+    g.appendChild(c); g.appendChild(tx); gNodes.appendChild(g);
+    return { g, c, tx, n };
+  });
+
+  // ---- pan / zoom transform ----
+  let tf = { x:0, y:0, k:1 };
+  function applyTf(){ view.setAttribute("transform", `translate(${tf.x},${tf.y}) scale(${tf.k})`); }
+  function toView(clientX, clientY){
+    const rect = svg.getBoundingClientRect();
+    const sx = (clientX-rect.left)*(W/rect.width);
+    const sy = (clientY-rect.top)*(H/rect.height);
+    return { x:(sx-tf.x)/tf.k, y:(sy-tf.y)/tf.k, sx, sy };
+  }
+
+  // ---- force simulation ----
+  let alpha = 1.0, running = false;
+  const CX = W/2, CY = H/2;
+  function tick(){
+    // repulsion (O(n^2) — fine for <=120 nodes)
+    for (let i=0;i<nodes.length;i++){
+      const a = nodes[i];
+      for (let j=i+1;j<nodes.length;j++){
+        const b = nodes[j];
+        let dx = a.x-b.x, dy = a.y-b.y, d2 = dx*dx+dy*dy;
+        if (d2 < 0.01){ dx = Math.random()-0.5; dy = Math.random()-0.5; d2 = dx*dx+dy*dy+0.01; }
+        const dist = Math.sqrt(d2), rep = 4200/d2;   // stronger anti-gravity → clusters separate
+        const fx = (dx/dist)*rep, fy = (dy/dist)*rep;
+        a.vx += fx; a.vy += fy; b.vx -= fx; b.vy -= fy;
+      }
+    }
+    // link springs
+    for (const l of links){
+      const a = l.source, b = l.target;
+      let dx = b.x-a.x, dy = b.y-a.y, dist = Math.sqrt(dx*dx+dy*dy) || 0.01;
+      const k = (dist-66)*0.03;   // tighter, stronger springs → compact clusters
+      const fx = (dx/dist)*k, fy = (dy/dist)*k;
+      a.vx += fx; a.vy += fy; b.vx -= fx; b.vy -= fy;
+    }
+    // gentle centering
+    for (const n of nodes){ n.vx += (CX-n.x)*0.0012; n.vy += (CY-n.y)*0.0012; }  // looser centering → clusters spread out
+    // integrate with damping
+    for (const n of nodes){
+      if (n === DRAG_NODE){ n.vx = 0; n.vy = 0; continue; }
+      n.vx *= 0.86; n.vy *= 0.86;
+      n.x += n.vx*alpha; n.y += n.vy*alpha;
+    }
+    alpha *= 0.994; if (alpha < 0.02) alpha = 0.02;
+    render();
+  }
+  function render(){
+    for (let i=0;i<lineEls.length;i++){
+      const l = links[i];
+      lineEls[i].setAttribute("x1", l.source.x); lineEls[i].setAttribute("y1", l.source.y);
+      lineEls[i].setAttribute("x2", l.target.x); lineEls[i].setAttribute("y2", l.target.y);
+    }
+    for (const ne of nodeEls) ne.g.setAttribute("transform", `translate(${ne.n.x},${ne.n.y})`);
+  }
+  function loop(){
+    tick();
+    if (alpha <= 0.025 && !DRAG_NODE){ running = false; GRAPH_RAF = null; return; }
+    GRAPH_RAF = requestAnimationFrame(loop);
+  }
+  function ensureRunning(){ if(!running){ running = true; loop(); } }
+  function reheat(a){ alpha = Math.max(alpha, a||0.5); ensureRunning(); }
+  ensureRunning();
+
+  // ---- node interactions (drag + click) ----
+  function onNodeClick(n, ev){
+    if (n.type === "artifact"){ hideGPop(); openArtifact(n.id); return; }
+    const pop = document.getElementById("gPop");
+    pop.innerHTML = `${badge(n.type)}${n.state?" "+stateBadge(n.state):""}`
+      + `<div style="margin-top:6px; font-weight:700">${escapeHtml(n.label||n.id)}</div>`
+      + `<div class="muted" style="font-size:11.5px; margin-top:3px">id: ${escapeHtml(n.id)}</div>`;
+    const rect = wrap.getBoundingClientRect();
+    pop.style.display = "block";
+    pop.style.left = Math.max(8, Math.min(rect.width-pop.offsetWidth-8, ev.clientX-rect.left+12))+"px";
+    pop.style.top  = Math.max(8, Math.min(rect.height-pop.offsetHeight-8, ev.clientY-rect.top+12))+"px";
+  }
+  nodeEls.forEach(ne => {
+    ne.g.addEventListener("pointerdown", ev => {
+      ev.stopPropagation();
+      try { ne.g.setPointerCapture(ev.pointerId); } catch(_){}
+      DRAG_NODE = ne.n; DRAG_MOVED = false; reheat(0.3);
+    });
+    ne.g.addEventListener("pointermove", ev => {
+      if (DRAG_NODE !== ne.n) return;
+      const p = toView(ev.clientX, ev.clientY);
+      ne.n.x = p.x; ne.n.y = p.y; ne.n.vx = 0; ne.n.vy = 0;
+      DRAG_MOVED = true; reheat(0.3); render();
+    });
+    ne.g.addEventListener("pointerup", ev => {
+      if (DRAG_NODE === ne.n){ DRAG_NODE = null; reheat(0.15); }
+      if (!DRAG_MOVED) onNodeClick(ne.n, ev);
+    });
+  });
+
+  // ---- background pan + wheel zoom ----
+  let panning = false, panStart = null;
+  svg.addEventListener("pointerdown", ev => {
+    if (DRAG_NODE) return;
+    panning = true;
+    panStart = { x:ev.clientX, y:ev.clientY, tx:tf.x, ty:tf.y };
+    try { svg.setPointerCapture(ev.pointerId); } catch(_){}
+    hideGPop();
+  });
+  svg.addEventListener("pointermove", ev => {
+    if (!panning) return;
+    const rect = svg.getBoundingClientRect();
+    tf.x = panStart.tx + (ev.clientX-panStart.x)*(W/rect.width);
+    tf.y = panStart.ty + (ev.clientY-panStart.y)*(H/rect.height);
+    applyTf();
+  });
+  svg.addEventListener("pointerup", () => { panning = false; });
+  svg.addEventListener("wheel", ev => {
+    ev.preventDefault();
+    const p = toView(ev.clientX, ev.clientY);
+    const nk = Math.max(0.35, Math.min(3, tf.k*(ev.deltaY<0 ? 1.12 : 1/1.12)));
+    tf.x = p.sx - p.x*nk; tf.y = p.sy - p.y*nk; tf.k = nk;
+    applyTf();
+  }, { passive:false });
+}
+
+// --- boot ---
+async function boot(){
+  try {
+    const [chats, cfg] = await Promise.all([ api("/api/chats"), api("/api/config?slug="+encodeURIComponent(SLUG)) ]);
+    CHATS = chats;
+    document.getElementById("enabled").checked = !!cfg.enabled;
+    const mode = cfg.mode==="include" ? "include" : "exclude";
+    const radio = document.querySelector(`input[name=mode][value="${mode}"]`); if(radio) radio.checked=true;
+    TRACKED = new Set((cfg.chats||[]).map(keyOf));
+    REALTIME = new Set((cfg.realtime||[]).map(keyOf));
+    CLAUDE = new Set((cfg.claude||[]).map(keyOf));
+    DRAFT = new Set((cfg.auto_draft||[]).map(keyOf));
+    showApp(); renderChats(); loadItems();
+    // Resume sweep progress if one is already running (e.g. page reload).
+    try {
+      const st = await api("/api/sweep/status");
+      if (st && st.running){
+        document.getElementById("sweepBtn").disabled = true;
+        if (SWEEP_POLL) clearInterval(SWEEP_POLL);
+        SWEEP_POLL = setInterval(pollSweep, 3000);
+      }
+    } catch(e){ /* non-fatal */ }
+  } catch(e){ if(e.auth) return showGate("Invalid token."); showGate("Error: "+(e.message||e)); }
+}
+
+if (TOKEN) boot(); else showGate("");
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+/* Machines wrapper: one page title + tabs; the active tab renders below. */
+.mc-head { margin-bottom: var(--sp-4); }
+.mc-tabs { display: flex; gap: var(--sp-1); border-bottom: 1px solid var(--line); margin-bottom: var(--sp-5); overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+.mc-tab { position: relative; padding: var(--sp-2) var(--sp-3) var(--sp-3); font-size: var(--fs-sm); font-weight: var(--fw-medium);
+  color: var(--text-3); text-decoration: none; white-space: nowrap; }
+.mc-tab:hover { color: var(--text); }
+.mc-tab.on { color: var(--text); }
+.mc-tab.on::after { content: ''; position: absolute; left: var(--sp-3); right: var(--sp-3); bottom: 0; height: 2px; border-radius: 2px; background: var(--text); }
+
+/* A tab view's slim toolbar (its sub + actions) — see TabPage.tsx. */
+.mc-toolbar { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; margin-bottom: var(--sp-5); min-height: 32px; }
+.mc-toolbar-sub { color: var(--text-3); font-size: var(--fs-sm); display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }

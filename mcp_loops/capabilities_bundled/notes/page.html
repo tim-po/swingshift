@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Notes</title>
+<style>
+  :root { color-scheme: dark light; }
+  body { font: 14px/1.5 system-ui, sans-serif; margin: 0; padding: 16px;
+         background: #0f1115; color: #e6e6e6; }
+  h1 { font-size: 16px; margin: 0 0 4px; }
+  .sub { color: #8a94a6; font-size: 12px; margin: 0 0 14px; }
+  .row { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  input, textarea { background: #171a21; color: #e6e6e6; border: 1px solid #2a2f3a;
+                    border-radius: 6px; padding: 8px; font: inherit; }
+  input { flex: 1 1 160px; }
+  textarea { width: 100%; min-height: 54px; box-sizing: border-box; }
+  button { background: #2b6cff; color: #fff; border: 0; border-radius: 6px;
+           padding: 8px 14px; font: inherit; cursor: pointer; }
+  button.secondary { background: #262b36; color: #cfd6e4; }
+  button:disabled { opacity: .5; cursor: default; }
+  ul { list-style: none; margin: 12px 0 0; padding: 0; }
+  li { border: 1px solid #232833; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px;
+       background: #12151b; }
+  li .t { font-weight: 600; }
+  li .b { color: #b9c1d0; white-space: pre-wrap; margin-top: 2px; }
+  .digest { border-color: #2b6cff; }
+  .muted { color: #8a94a6; }
+  .err { color: #ff8080; }
+  #result { margin-top: 12px; font-size: 13px; }
+  code { background: #171a21; padding: 1px 5px; border-radius: 4px; }
+</style>
+</head>
+<body>
+  <h1>Notes</h1>
+  <p class="sub">A capability page, mounted by the dashboard shell. Notes are stored in
+    <code>loopyard/notes/</code> inside this project's checkout.</p>
+
+  <div class="row">
+    <input id="title" placeholder="note title" aria-label="note title">
+  </div>
+  <div class="row">
+    <textarea id="body" placeholder="note body…" aria-label="note body"></textarea>
+  </div>
+  <div class="row">
+    <button id="add">Add note</button>
+    <button id="run" class="secondary" title="Trigger the attached loop">Summarize notes ↻</button>
+  </div>
+
+  <div id="result"></div>
+  <ul id="list"><li class="muted">loading…</li></ul>
+
+<script>
+(function () {
+  var qs = new URLSearchParams(location.search);
+  var PROJECT = qs.get("project") || "";
+  var CAP = "notes";
+  var BASE = "/api/loops/capability/" + CAP + "/" + encodeURIComponent(PROJECT);
+
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s){ return String(s == null ? "" : s).replace(/[&<>]/g, function(c){
+    return ({ "&":"&amp;", "<":"&lt;", ">":"&gt;" })[c]; }); }
+
+  async function jget(u){ var r = await fetch(u); return r.json(); }
+  async function jpost(u, body){
+    var r = await fetch(u, { method:"POST", headers:{ "content-type":"application/json" },
+                            body: JSON.stringify(body) });
+    return r.json();
+  }
+
+  async function load(){
+    if (!PROJECT){ $("list").innerHTML = '<li class="err">No project in context.</li>'; return; }
+    var res = await jget(BASE + "/data");
+    if (res.error){ $("list").innerHTML = '<li class="err">'+esc(res.error)+'</li>'; return; }
+    var items = (res.items || []).slice().sort(function(a,b){
+      return (b.json && b.json.ts || 0) - (a.json && a.json.ts || 0); });
+    if (!items.length){ $("list").innerHTML = '<li class="muted">No notes yet.</li>'; return; }
+    $("list").innerHTML = items.map(function (it){
+      var j = it.json || {};
+      var digest = /digest/.test(it.name) ? " digest" : "";
+      return '<li class="'+digest+'"><div class="t">'+esc(j.title || it.name)+'</div>'
+           + '<div class="b">'+esc(j.body || "")+'</div></li>';
+    }).join("");
+  }
+
+  $("add").onclick = async function(){
+    var title = $("title").value.trim();
+    var body = $("body").value.trim();
+    if (!title && !body) return;
+    this.disabled = true;
+    var id = "note-" + Date.now();
+    var note = { title: title || "(untitled)", body: body, ts: Date.now() };
+    var res = await jpost(BASE + "/data", { path: id + ".json", content: JSON.stringify(note) });
+    this.disabled = false;
+    if (res.error){ $("result").innerHTML = '<span class="err">'+esc(res.error)+'</span>'; return; }
+    $("title").value = ""; $("body").value = "";
+    load();
+  };
+
+  $("run").onclick = async function(){
+    this.disabled = true;
+    $("result").innerHTML = '<span class="muted">triggering attached loop…</span>';
+    var res = await jpost(BASE + "/trigger", {});
+    this.disabled = false;
+    if (res.error){ $("result").innerHTML = '<span class="err">'+esc(res.error)+'</span>'; return; }
+    var env = res.envelope || {};
+    $("result").innerHTML = 'Attached loop <code>'+esc(res.loop || "")+'</code> — status <b>'
+      + esc(env.status || "started") + '</b>. '
+      + '<button class="secondary" id="refresh">Refresh result</button>';
+    var rb = $("refresh");
+    if (rb) rb.onclick = async function(){
+      var r = await jget(BASE + "/result");
+      $("result").innerHTML = 'Attached loop <code>'+esc(res.loop||"")+'</code> — status <b>'
+        + esc(r.status || "?") + '</b>' + (r.summary ? '<div class="muted">'+esc(r.summary)+'</div>' : '');
+      load();
+    };
+  };
+
+  load();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+# Loopyard origin bundle — the ONE shared input for the 4 per-target locks
+# (PHASE-B-SPEC §1.5). = the engine deps + the user-worker deps + a direct
+# cryptography pin. Regenerate the locks with:
+#   python -m mcp_loops.origin_bundle lock
+# and never edit bundle/locks/*.lock by hand.
+-r ../mcp_loops/requirements.txt
+-r ../worker/requirements-loopyard.txt
+# tls.py imports cryptography at module top; today it only arrives via
+# mcp -> pyjwt[crypto]. Pin it directly, on ONE major for all four targets
+# (cryptography 50 has no macOS x86_64 wheel).
+cryptography>=44,<49

@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Liked Results</title>
+<style>
+  :root { color-scheme: dark light; }
+  body { font: 14px/1.5 system-ui, sans-serif; margin: 0; padding: 16px;
+         background: #0f1115; color: #e6e6e6; }
+  h1 { font-size: 16px; margin: 0 0 4px; }
+  .sub { color: #8a94a6; font-size: 12px; margin: 0 0 14px; }
+  .row { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; align-items: center; }
+  input { background: #171a21; color: #e6e6e6; border: 1px solid #2a2f3a;
+          border-radius: 6px; padding: 8px; font: inherit; }
+  input.loop { flex: 0 0 170px; } input.src { flex: 1 1 200px; } input.note { flex: 1 1 200px; }
+  button { background: #2b6cff; color: #fff; border: 0; border-radius: 6px;
+           padding: 6px 12px; font: inherit; cursor: pointer; }
+  button.secondary { background: #262b36; color: #cfd6e4; }
+  button.mini { padding: 4px 9px; font-size: 12px; }
+  button:disabled { opacity: .5; cursor: default; }
+  .wrap { display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap; }
+  .col-list { flex: 1 1 280px; min-width: 240px; }
+  .col-view { flex: 3 1 420px; min-width: 300px; }
+  ul { list-style: none; margin: 8px 0 0; padding: 0; }
+  li { border: 1px solid #232833; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px;
+       background: #12151b; }
+  li .t { font-weight: 600; word-break: break-all; }
+  li .b { color: #b9c1d0; margin-top: 2px; }
+  li .meta { margin-top: 6px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .chip { font-size: 11px; padding: 1px 8px; border-radius: 999px; border: 1px solid #2a2f3a;
+          color: #cfd6e4; }
+  .k-md { background: #12294a; color: #7fb2ff; border-color: #1c467e; }
+  .k-html { background: #3a3312; color: #e2cf7e; border-color: #5c5019; }
+  .k-text { background: #22262f; color: #9aa3b2; }
+  .prov { color: #8a94a6; }
+  .muted { color: #8a94a6; } .err { color: #ff8080; }
+  #result { margin: 8px 0; font-size: 13px; min-height: 18px; }
+  code { background: #171a21; padding: 1px 5px; border-radius: 4px; }
+  iframe.render { width: 100%; height: 62vh; border: 1px solid #232833; border-radius: 8px;
+                  background: #0f1115; }
+  .viewhdr { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+  .viewhdr .name { font-weight: 600; word-break: break-all; }
+  .sec { color: #8a94a6; font-size: 11px; text-transform: uppercase; letter-spacing: .04em;
+         margin: 4px 0; }
+</style>
+</head>
+<body>
+  <h1>Liked Results</h1>
+  <p class="sub">A gallery of outputs you pinned from loop runs, kept under
+    <code>loopyard/results/</code> with provenance. Rendered inline (markdown &amp; HTML,
+    sandboxed).</p>
+
+  <div class="sec">Pin a loop output</div>
+  <div class="row">
+    <input id="loop" class="loop" placeholder="loop name" aria-label="loop name">
+    <input id="src" class="src" placeholder="output file (e.g. finish-report.md)" aria-label="output file">
+    <input id="note" class="note" placeholder="note (optional)" aria-label="note">
+    <button id="pin">Pin to results</button>
+  </div>
+
+  <div id="result"></div>
+  <div class="wrap">
+    <div class="col-list">
+      <div class="sec">Pinned results</div>
+      <ul id="list"><li class="muted">loading…</li></ul>
+    </div>
+    <div class="col-view" id="view">
+      <div class="muted">Select a result to render it here.</div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  var qs = new URLSearchParams(location.search);
+  var PROJECT = qs.get("project") || "";
+  var CAP = "liked-results";
+  var BASE = "/api/loops/capability/" + CAP + "/" + encodeURIComponent(PROJECT);
+
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s){ return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){
+    return ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" })[c]; }); }
+  async function jget(u){ var r = await fetch(u); return r.json(); }
+  async function jpost(u, body){
+    var r = await fetch(u, { method:"POST", headers:{ "content-type":"application/json" },
+                            body: JSON.stringify(body) });
+    return r.json();
+  }
+  function msg(html){ $("result").innerHTML = html || ""; }
+  function errMsg(t){ msg('<span class="err">'+esc(t)+'</span>'); }
+
+  function prov(it){
+    if (it.source === "loop-output" && it.loop)
+      return 'pinned from loop <code>'+esc(it.loop)+'</code>'
+        + (it.run ? ' · <code>'+esc(it.run)+'</code>' : '');
+    if (it.source === "imported") return 'imported';
+    if (it.source === "file") return 'pinned file';
+    return esc(it.source || "");
+  }
+
+  async function load(){
+    if (!PROJECT){ $("list").innerHTML = '<li class="err">No project in context.</li>'; return; }
+    var res = await jget(BASE + "/list");
+    if (res.error){ $("list").innerHTML = '<li class="err">'+esc(res.error)+'</li>'; return; }
+    var items = res.items || [];
+    if (!items.length){ $("list").innerHTML = '<li class="muted">No pinned results yet.</li>'; return; }
+    $("list").innerHTML = items.map(function (it, i){
+      return '<li>'
+        + '<div class="t">'+esc(it.name)+'</div>'
+        + (it.note ? '<div class="b">'+esc(it.note)+'</div>' : '')
+        + '<div class="meta">'
+        +   '<span class="chip k-'+esc(it.kind)+'">'+esc(it.kind)+'</span>'
+        +   '<span class="chip prov">'+prov(it)+'</span>'
+        +   '<button class="mini" data-view="'+i+'">View</button>'
+        + '</div></li>';
+    }).join("");
+    Array.prototype.forEach.call($("list").querySelectorAll("[data-view]"), function(b){
+      b.onclick = function(){ view(items[+b.getAttribute("data-view")]); };
+    });
+  }
+
+  async function view(it){
+    $("view").innerHTML = '<div class="muted">rendering “'+esc(it.name)+'”…</div>';
+    var res = await jget(BASE + "/render?path=" + encodeURIComponent(it.path));
+    if (res.error){ $("view").innerHTML = '<div class="err">'+esc(res.error)+'</div>'; return; }
+    var frame = document.createElement("iframe");
+    frame.className = "render";
+    frame.setAttribute("sandbox", "");        // no allow-scripts → inert + offline
+    frame.srcdoc = res.document || "";
+    var hdr = document.createElement("div");
+    hdr.className = "viewhdr";
+    hdr.innerHTML = '<span class="name">'+esc(it.name)+'</span>'
+      + '<span class="chip k-'+esc(res.kind)+'">'+esc(res.kind)+'</span>'
+      + '<span class="chip prov">'+prov(it)+'</span>';
+    $("view").innerHTML = "";
+    $("view").appendChild(hdr);
+    $("view").appendChild(frame);
+  }
+
+  $("pin").onclick = async function(){
+    var loop = $("loop").value.trim(), src = $("src").value.trim();
+    if (!loop || !src){ errMsg("a loop name and an output file are required"); return; }
+    this.disabled = true;
+    msg('<span class="muted">pinning <code>'+esc(src)+'</code> from <code>'+esc(loop)+'</code>…</span>');
+    var res = await jpost(BASE + "/pin", { loop: loop, src: src, note: $("note").value.trim() });
+    this.disabled = false;
+    if (res.error){ errMsg(res.error); return; }
+    $("loop").value=""; $("src").value=""; $("note").value="";
+    msg('<span class="muted">pinned.</span>'); load();
+  };
+
+  load();
+})();
+</script>
+</body>
+</html>

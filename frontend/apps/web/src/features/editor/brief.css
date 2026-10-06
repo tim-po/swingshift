@@ -1,0 +1,32 @@
+/* Briefing chat (bc-*). Tokens only. */
+.bc-sub { color: var(--text-3); font-size: var(--fs-sm); line-height: var(--lh); margin: 0 0 var(--sp-3); }
+.bc-body { display: flex; flex-direction: column; gap: var(--sp-3); }
+.bc-chat { display: flex; flex-direction: column; gap: var(--sp-2); }
+.bc-msg { display: flex; gap: var(--sp-3); align-items: baseline; line-height: var(--lh); font-size: var(--fs-sm); min-width: 0; }
+.bc-who { flex: none; min-width: 56px; font-size: var(--fs-xs); font-weight: var(--fw-semi); color: var(--text-3); }
+.bc-msg.you .bc-who { color: var(--text-2); }
+.bc-txt { color: var(--text); overflow-wrap: anywhere; min-width: 0; }
+.bc-msg.creator .bc-txt { color: var(--text-2); }
+.bc-prev { border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); padding: var(--sp-3) var(--sp-4); }
+.bc-prevhd { font-size: var(--fs-xs); color: var(--text-3); margin-bottom: var(--sp-2); }
+.bc-prevhd b { color: var(--text); font-weight: var(--fw-semi); }
+.bc-roles { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-1); }
+.bc-roles li { display: flex; gap: var(--sp-3); align-items: baseline; line-height: var(--lh); min-width: 0; }
+.bc-rid { font-family: var(--mono); font-size: var(--fs-xs); color: var(--text); width: 110px; flex: none; font-weight: var(--fw-semi);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bc-why { color: var(--text-3); font-size: var(--fs-xs); min-width: 0; overflow-wrap: anywhere; }
+.bc-form { display: flex; flex-direction: column; gap: var(--sp-3); }
+.bc-q { display: flex; flex-direction: column; gap: var(--sp-1); }
+.bc-ql { font-size: var(--fs-sm); color: var(--text); }
+.bc-qi { padding: var(--sp-2) var(--sp-3); border: 1px solid var(--line-strong); border-radius: var(--r-sm); background: var(--bg); color: var(--text);
+  font-size: var(--fs-sm); outline: none; }
+.bc-qi:focus { border-color: var(--text-3); }
+.bc-acts { display: flex; gap: var(--sp-2); flex-wrap: wrap; align-items: center; margin-top: var(--sp-1); }
+.bc-msgline { margin-top: var(--sp-3); font-size: var(--fs-sm); min-height: 1em; overflow-wrap: anywhere; }
+.bc-msgline.info { color: var(--text-3); }
+.bc-msgline.ok { color: var(--ok); }
+.bc-msgline.bad { color: var(--bad); }
+@media (max-width: 760px) {
+  .bc-rid { width: 80px; }
+  .bc-qi { font-size: var(--fs-md); } /* ≥16px: no iOS zoom-on-focus */
+}

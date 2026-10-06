@@ -1,0 +1,52 @@
+{
+  "name": "build_review_fix",
+  "setup": {
+    "ensure": "_testrepo_cap4",
+    "script": "scripts/seed-testrepo-cap4.sh"
+  },
+  "goal": "MULTI-CLI PROOF (pilot-a CAP-4). Make the throwaway repo at $LOOPYARD_INSTALL/_testrepo_cap4 GREEN: it has a real failing pytest (test_mathutil.py) against a stub in mathutil.py. The team fixes it under review by an INDEPENDENT reviewer running on a DIFFERENT CLI than the writer.\n\nFLOW: writer implements the fix -> tester runs the real pytest -> INDEPENDENT codex reviewer checks the actual diff -> writer fixes any findings -> tester re-runs -> result. The writer (claude) and the reviewer (codex) are DIFFERENT agents on DIFFERENT runtimes, so the review is genuinely independent.\n\nDONE = `python -m pytest test_mathutil.py` is green AND the reviewer is satisfied. The tester's final report MUST embed the result markers `tests=green` (or `tests=passed:N/N`) and `commit=<hash>` so the run's result envelope is honest. The manager winds down only when tests are green and the reviewer is satisfied.",
+  "substrate": "headless",
+  "contextCaps": { "default": 200000, "manager": 400000 },
+  "budget": {
+    "turnLimit": 16,
+    "managerFinalizeSteps": 2,
+    "minorOnlyExtraSteps": 1,
+    "minorSkipThreshold": 0.30
+  },
+  "humanInLoop": { "owner": "tim", "via": "manager" },
+  "steps": {
+    "manager": {
+      "type": "agent",
+      "role": "manager",
+      "runtime": "claude",
+      "personality": "A calm, decisive tech lead. Keeps a tight written status (done / to-do + a one-line health note) and turns reviewer/tester findings into small ordered writer tasks. Refuses scope creep.",
+      "goal": "Hold the goal in full. Each turn: read the latest tester + reviewer input, update your status, and hand the writer a concrete task. Wind down ONLY when the pytest is green AND the independent reviewer is satisfied."
+    },
+    "writer": {
+      "type": "agent",
+      "role": "worker",
+      "runtime": "claude",
+      "personality": "A pragmatic Python engineer who ships the smallest correct change to make the failing test pass, then commits in-turn. Works ONLY in $LOOPYARD_INSTALL/_testrepo_cap4.",
+      "goal": "Implement the fix in mathutil.py so test_mathutil.py passes. Run `python -m pytest test_mathutil.py` yourself; when green, `git add -A && git commit` and put the short commit hash in your note. Address any reviewer findings the manager assigns. Report work_remaining until green + reviewed.",
+      "maxRepeatTurns": 3
+    },
+    "reviewer": {
+      "type": "agent",
+      "role": "input_provider",
+      "runtime": "codex",
+      "model": "gpt-6-astra",
+      "personality": "A sharp, INDEPENDENT reviewer running on codex — a different CLI than the claude writer. Reads the ACTUAL diff (git diff / git log -p) in $LOOPYARD_INSTALL/_testrepo_cap4. Checks correctness and that the fix is real, not a test-weakening hack.",
+      "goal": "Review the writer's diff. Report needs_work with specific file:line fixes if the fix is wrong, incomplete, or weakens the test; report satisfied only when the change is correct and the test genuinely passes; minor_only if only nits remain.",
+      "tools": ["git"]
+    },
+    "tester": {
+      "type": "agent",
+      "role": "input_provider",
+      "runtime": "claude",
+      "personality": "A relentless tester who trusts only a real run.",
+      "goal": "Run `python -m pytest test_mathutil.py` in $LOOPYARD_INSTALL/_testrepo_cap4. Report needs_work with the failing output when red; when green, report satisfied and embed the markers `tests=green` and `commit=<hash of HEAD>` in your note so the result envelope is honest.",
+      "tools": ["pytest"]
+    }
+  },
+  "stepOrder": ["manager", "writer", "tester", "reviewer"]
+}

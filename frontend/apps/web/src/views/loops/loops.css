@@ -1,0 +1,69 @@
+/* Loops list (left) + detail frame (right). Tokens only. */
+.two-pane { display: grid; grid-template-columns: 340px minmax(0, 1fr); height: 100%; min-height: 0; }
+.two-pane .list { border-right: 1px solid var(--line); overflow-y: auto; padding: var(--sp-4) var(--sp-3); }
+.two-pane .detail { overflow-y: auto; padding: var(--sp-6) var(--sp-8) var(--sp-12); min-width: 0; }
+
+.listhead { display: flex; align-items: center; justify-content: space-between; padding: 0 var(--sp-2); margin-bottom: var(--sp-3); }
+.lh-count { font-size: var(--fs-sm); font-weight: var(--fw-semi); color: var(--text-2); }
+.two-pane .list .searchbox { margin: 0 var(--sp-1) var(--sp-3); }
+
+/* First run: one centred welcome. */
+.lp-first { height: 100%; overflow-y: auto; display: flex; justify-content: center; padding: 0 var(--sp-4); }
+.lp-welcome { max-width: 400px; }
+.lp-welcome-ico { display: grid; place-items: center; width: 44px; height: 44px; border-radius: var(--r); background: var(--surface-2);
+  color: var(--text-2); border: 1px solid var(--line); }
+.lp-welcome p b { color: var(--text); font-weight: var(--fw-semi); }
+.lp-pick { margin-top: var(--sp-16); }
+
+/* Filters: quiet, only when relevant. */
+.loopchips { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin: 0 var(--sp-1) var(--sp-3); }
+.lchip { display: inline-flex; align-items: center; gap: var(--sp-2); height: 26px; padding: 0 var(--sp-3); border-radius: var(--r-pill);
+  background: transparent; border: 1px solid var(--line-strong); color: var(--text-3); font-size: var(--fs-xs); font-weight: var(--fw-medium); cursor: pointer;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease); }
+.lchip:hover { background: var(--hover); color: var(--text); }
+.lchip.on { background: var(--surface-3); color: var(--text); border-color: var(--line-strong); }
+.lchipn { font-family: var(--machine); font-weight: var(--fw-bold); color: var(--text-3); font-variant-numeric: tabular-nums; }
+.lchip.on .lchipn { color: var(--text-3); }
+.lchip.owner { cursor: default; }
+.lchip.owner select { background: transparent; border: 0; color: var(--text); font-size: var(--fs-xs); cursor: pointer; }
+.lchip.owner select:focus { outline: none; }
+
+/* Groups by project: a quiet label, not a coloured banner. */
+.lgroup + .lgroup { margin-top: var(--sp-4); }
+.lgrp { display: flex; align-items: baseline; gap: var(--sp-2); margin: 0 0 var(--sp-1); padding: 0 var(--sp-2);
+  font-size: var(--fs-xs); font-weight: var(--fw-semi); color: var(--text-3); }
+.lgrp-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lgrp-cnt { font-family: var(--machine); font-size: var(--fs-xs); color: var(--text-3); font-weight: var(--fw-bold); }
+
+/* One loop row: flat, hover-lit, no box. */
+.lcard { display: flex; flex-direction: column; gap: 2px; width: 100%; text-align: left; background: none; border: 0; border-radius: var(--r-sm);
+  padding: var(--sp-2) var(--sp-2); cursor: pointer; color: inherit; font: inherit; min-width: 0;
+  transition: background var(--dur) var(--ease); }
+.lcard:hover { background: var(--hover); }
+.lcard.sel { background: var(--surface-3); }
+.lcard.arch { opacity: 0.55; }
+.lc-top { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
+.lc-top .badge { margin-left: auto; flex: none; }
+.lname { font-size: var(--fs-base); font-weight: var(--fw-medium); color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lc-meta { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; font-size: var(--fs-xs); color: var(--text-3);
+  overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.lc-last { font-size: var(--fs-xs); color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lc-agent { color: var(--text-2); font-weight: var(--fw-medium); }
+.ownerflag { flex: none; color: var(--text-2); max-width: 14ch; overflow: hidden; text-overflow: ellipsis; }
+.ownerflag::before, .dispflag::before { content: '·'; margin-right: var(--sp-2); color: var(--text-4); }
+.dispflag { flex: none; color: var(--text-2); }
+.dispflag.good { color: var(--ok); }
+.dispflag.bad { color: var(--bad); }
+
+/* Per-project rating rollup (only once something is rated). */
+.disproll { font-size: var(--fs-xs); color: var(--text-3); margin: 0 var(--sp-2) var(--sp-3); }
+.disproll .rg { color: var(--ok); }
+.disproll .rg.low { color: var(--bad); }
+
+@media (max-width: 760px) {
+  .two-pane { display: block; }
+  .two-pane .list { border-right: 0; }
+  .two-pane .detail { display: none; padding: var(--sp-4) var(--sp-4) var(--sp-12); }
+  .two-pane.has-sel .list { display: none; }
+  .two-pane.has-sel .detail { display: block; }
+}

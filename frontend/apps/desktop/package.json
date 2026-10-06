@@ -1,0 +1,21 @@
+{
+  "name": "@loopyard/desktop",
+  "private": true,
+  "version": "0.1.0",
+  "description": "A thin Electron shell that loads the Loopyard web UI on macOS.",
+  "main": "main.js",
+  "author": "Loopyard",
+  "scripts": {
+    "start": "electron .",
+    "smoke": "node scripts/smoke.mjs",
+    "test": "vitest run",
+    "stage:origin": "node scripts/stage-origin.mjs",
+    "dist:mac": "node scripts/stage-origin.mjs && electron-builder --mac"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "jsdom": "^30.1.1",
+    "vitest": "^5.0.1"
+  }
+}

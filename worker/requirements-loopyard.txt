@@ -1,0 +1,23 @@
+# Minimal deps to run the bot-squad worker daemon in USER-WORKER mode — the
+# subset Loopyard needs to actually EXECUTE loops hands-free (spawn_session /
+# inject_input / suspend / archive: tmux ops only).
+#
+# This is a STRICT subset of worker/pyproject.toml. User-worker mode starts NO
+# scheduler (see bot_squad_worker/__main__.py), so the heavy coordinator deps
+# (telethon, autogen, tiktoken, caldav, icalendar) are never imported and are
+# deliberately omitted here — a Loopyard box does not run Telegram/AutoGen jobs.
+#
+# Verified (round-4 B1): with only these installed,
+#   BOT_SQUAD_MODE=user-worker python -m bot_squad_worker --config <cfg>
+# boots non-degraded, binds its Unix socket, and serves /health + spawn_session.
+fastapi>=0.110
+uvicorn>=0.29
+# WebSocket protocol backend for uvicorn (lean, pure-python; only dep h11 which
+# uvicorn already pulls). Plain uvicorn ships no ws implementation, so a real
+# server 404s the /ws/terminal handshake ("No supported WebSocket library").
+# The dashboard's web terminal (QoL R4, docs/TERMINAL.md) needs it whenever the
+# dashboard is served with the terminal route wired. Cheap to carry; preferred
+# over the heavier uvicorn[standard] extra.
+wsproto>=1.2
+apscheduler>=3.10
+httpx>=0.27,<1

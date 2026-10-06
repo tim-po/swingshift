@@ -1,0 +1,13 @@
+/* Flip-dot board. The wrap takes the width (and scrolls when the board can't fit);
+ * the frame is the hardware and hugs the discs. */
+.fd-wrap { position: relative; max-width: 100%; overflow-x: auto; overflow-y: hidden; }
+.fd { display: inline-block; vertical-align: top; background: var(--board); border: 1px solid var(--line-strong);
+  border-radius: var(--r); padding: var(--sp-3) var(--sp-4); }
+.fd canvas { display: block; }
+.fd-wrap.sm .fd { padding: 5px 7px; border-radius: var(--r-sm); }
+.fd-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* Plate text printed on the frame (column heads). */
+.fd-head { position: relative; height: 14px; margin-bottom: var(--sp-2); }
+.fd-head > span { position: absolute; top: 0; left: calc(var(--fd-pitch, 4px) * var(--col, 0)); white-space: nowrap;
+  font-family: var(--machine); font-weight: var(--fw-bold); font-size: var(--fs-2xs); letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--plate); }

@@ -1,0 +1,63 @@
+/* Machines → Sessions: a flat roster matching the All tab. Tokens only. */
+.ss-warn { margin: 0 0 var(--sp-3); color: var(--warn); font-size: var(--fs-sm); }
+.ss-quiet { color: var(--text-3); }
+.ss-k { color: var(--text-3); font-size: var(--fs-xs); }
+
+.ss-row { border-top: 1px solid var(--line); }
+.ss-row:first-child { border-top: 0; }
+.ss-sum { display: flex; align-items: center; gap: var(--sp-3); min-height: 56px; padding: var(--sp-2) var(--sp-4); cursor: pointer; list-style: none; }
+.ss-sum::-webkit-details-marker { display: none; }
+.ss-sum:hover { background: var(--hover); }
+.ss-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--text-4); }
+.ss-dot.on { background: var(--ok); box-shadow: 0 0 0 3px var(--ok-tint); }
+.ss-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ss-name { font-weight: var(--fw-medium); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ss-kind { display: flex; gap: var(--sp-2); flex-wrap: wrap; color: var(--text-3); font-size: var(--fs-xs); }
+.ss-doing { color: var(--text-2); font-size: var(--fs-xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ss-seen { flex: none; color: var(--text-3); font-size: var(--fs-xs); white-space: nowrap; }
+.ss-seen.on { color: var(--ok); }
+.ss-chev { flex: none; color: var(--text-4); transition: transform var(--dur) var(--ease); }
+.ss-row[open] .ss-chev { transform: rotate(180deg); }
+
+.ss-body { display: flex; flex-direction: column; gap: var(--sp-3); padding: var(--sp-1) var(--sp-4) var(--sp-4) calc(var(--sp-4) + 8px + var(--sp-3)); }
+.ss-verbs { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.ss-send { display: flex; flex-direction: column; gap: var(--sp-2); max-width: var(--w-form); }
+.ss-sendbar { display: flex; gap: var(--sp-2); }
+.ss-msg { margin: 0; font-size: var(--fs-sm); overflow-wrap: anywhere; }
+.ss-msg.ok { color: var(--ok); }
+.ss-msg.err { color: var(--bad); }
+.ss-details { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--sp-1) var(--sp-5); margin: 0; font-size: var(--fs-xs); }
+.ss-details dt { color: var(--text-3); }
+.ss-details dd { margin: 0; color: var(--text-2); overflow-wrap: anywhere; }
+
+/* connect dialog */
+.ss-mh { margin: 0 0 var(--sp-2); }
+.ss-lead { margin: 0 0 var(--sp-4); color: var(--text-2); line-height: var(--lh); }
+.ss-attach { display: flex; flex-direction: column; gap: var(--sp-3); }
+.ss-steps { margin: 0; padding-left: var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-2); color: var(--text-2); line-height: var(--lh); }
+.ss-attach-actions { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
+.ss-link { display: flex; flex-direction: column; gap: var(--sp-2); }
+.ss-linkrow { display: flex; gap: var(--sp-2); align-items: center; }
+.ss-linkrow .input { flex: 1; min-width: 0; font-size: var(--fs-sm); }
+.ss-link.expired .input, .ss-link.revoked .input { color: var(--text-4); text-decoration: line-through; }
+.ss-hint { margin: 0; color: var(--text-2); font-size: var(--fs-sm); }
+.ss-linkstate { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; font-size: var(--fs-sm); }
+.ss-wait { display: inline-flex; align-items: center; gap: var(--sp-2); color: var(--text-2); }
+.ss-pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); animation: ss-pulse 1.4s var(--ease) infinite; }
+@keyframes ss-pulse { 50% { opacity: .35; } }
+.ss-exp { margin-left: auto; color: var(--text-3); font-size: var(--fs-xs); }
+.ss-ok { display: inline-flex; align-items: center; gap: var(--sp-1); color: var(--ok); font-weight: var(--fw-medium); }
+.ss-note { margin: 0; color: var(--text-3); font-size: var(--fs-xs); }
+.ss-attached-wrap { display: flex; flex-direction: column; gap: var(--sp-2); border-top: 1px solid var(--line); padding-top: var(--sp-3); }
+.ss-attached { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-2); font-size: var(--fs-sm); }
+.ss-attached li { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.ss-attached li .btn { margin-left: auto; }
+.ss-mactions { display: flex; justify-content: flex-end; gap: var(--sp-2); margin-top: var(--sp-6); }
+
+@media (max-width: 760px) {
+  .ss-sum { flex-wrap: wrap; }
+  .ss-seen { order: 5; flex-basis: 100%; padding-left: calc(8px + var(--sp-3)); }
+  .ss-chev { display: none; }
+  .ss-body { padding-left: var(--sp-4); }
+  .ss-verbs .btn, .ss-sendbar .btn, .ss-attach-actions .btn { min-height: 40px; }
+}

@@ -1,0 +1,27 @@
+.cm-anchor { position: relative; display: inline-flex; max-width: 100%; }
+.cm-bubble { position: absolute; z-index: 45; width: 260px; display: flex; flex-direction: column; gap: var(--sp-1);
+  padding: var(--sp-3) var(--sp-4) var(--sp-3); border-radius: var(--r); background: var(--text); color: var(--bg);
+  box-shadow: var(--shadow-pop); animation: cm-in 180ms var(--ease); text-align: left; white-space: normal; }
+.cm-bubble::before { content: ''; position: absolute; width: 10px; height: 10px; background: var(--text); transform: rotate(45deg); }
+.cm-bottom { top: calc(100% + 10px); left: 0; }
+.cm-bottom::before { top: -5px; left: 18px; }
+.cm-top { bottom: calc(100% + 10px); left: 0; }
+.cm-top::before { bottom: -5px; left: 18px; }
+.cm-right { left: calc(100% + 10px); top: 0; }
+.cm-right::before { left: -5px; top: 14px; }
+.cm-title { font-size: var(--fs-sm); font-weight: var(--fw-semi); padding-right: var(--sp-4); }
+.cm-body { font-size: var(--fs-xs); line-height: var(--lh); opacity: 0.8; }
+.cm-ok { align-self: flex-start; margin-top: var(--sp-2); height: 26px; padding: 0 var(--sp-3); border: 0; border-radius: var(--r-xs);
+  background: var(--bg); color: var(--text); font-size: var(--fs-xs); font-weight: var(--fw-semi); cursor: pointer; }
+.cm-x { position: absolute; top: var(--sp-2); right: var(--sp-2); width: 22px; height: 22px; display: grid; place-items: center;
+  border: 0; border-radius: var(--r-xs); background: none; color: var(--bg); opacity: 0.6; cursor: pointer; }
+.cm-x:hover { opacity: 1; }
+@keyframes cm-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .cm-bubble { animation: none; } }
+.cm-flip.cm-bottom, .cm-flip.cm-top { left: auto; right: 0; }
+.cm-flip.cm-bottom::before, .cm-flip.cm-top::before { left: auto; right: 18px; }
+/* Phones: dock as a card above the bottom edge instead of pointing — never off-screen, never over the content it names. */
+@media (max-width: 760px) {
+  .cm-bubble, .cm-flip.cm-bottom, .cm-flip.cm-top { position: fixed; left: var(--sp-4); right: var(--sp-4); top: auto; bottom: var(--sp-4); width: auto; z-index: 70; }
+  .cm-bubble::before { display: none; }
+}

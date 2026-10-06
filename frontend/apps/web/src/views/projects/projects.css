@@ -1,0 +1,54 @@
+/* Projects — flat list, one ⋯ per row. Tokens only. */
+.pj-row { display: flex; flex-direction: column; gap: var(--sp-1); padding: var(--sp-4); border-top: 1px solid var(--line); min-width: 0; }
+.pj-row:first-child { border-top: 0; }
+.pj-top { display: flex; align-items: center; gap: var(--sp-3); min-width: 0; }
+.pj-title { display: flex; align-items: baseline; gap: var(--sp-2); min-width: 0; flex: 1; }
+.pj-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.pj-id { color: var(--text-4); font-size: var(--fs-xs); white-space: nowrap; }
+.pj-btns { display: flex; align-items: center; gap: var(--sp-1); flex: none; }
+.pj-git { color: var(--text-3); font-size: var(--fs-xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pj-note { color: var(--text-2); font-size: var(--fs-sm); overflow-wrap: anywhere; }
+.pj-loops { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-1) var(--sp-2); color: var(--text-3); font-size: var(--fs-sm); margin-top: var(--sp-1); }
+.pj-loops a { color: var(--text-2); text-decoration: none; }
+.pj-loops a:hover { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+.pj-roll { color: var(--text-3); font-size: var(--fs-xs); }
+.pj-morelink { background: none; border: 0; padding: 0; font: inherit; color: var(--text-3); cursor: pointer; text-decoration: underline;
+  text-underline-offset: 3px; text-decoration-color: var(--text-4); }
+.pj-morelink:hover { color: var(--text); }
+.pj-confirm { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; margin-top: var(--sp-3);
+  padding: var(--sp-3); border-radius: var(--r); background: var(--bad-tint); color: var(--text-2); font-size: var(--fs-sm); }
+.pj-confirmbtns { display: flex; gap: var(--sp-2); }
+
+/* diagnostics disclosure */
+.pj-diag { margin-top: var(--sp-8); color: var(--text-3); font-size: var(--fs-sm); max-width: var(--w-read); }
+.pj-diag summary { cursor: pointer; color: var(--text-3); }
+.pj-diag summary:hover { color: var(--text); }
+.pj-diag ul { margin: var(--sp-2) 0 0; padding-left: var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-1); line-height: var(--lh); }
+
+/* flash */
+.pj-flash { display: flex; align-items: center; gap: var(--sp-3); margin: 0 0 var(--sp-4); padding: var(--sp-2) var(--sp-2) var(--sp-2) var(--sp-4);
+  border-radius: var(--r); font-size: var(--fs-sm); color: var(--ok); background: var(--ok-tint); overflow-wrap: anywhere; }
+.pj-flash.err { color: var(--bad); background: var(--bad-tint); }
+.pj-flash > span { flex: 1; }
+
+/* add dialog */
+.pj-add { display: flex; flex-direction: column; gap: var(--sp-4); min-width: min(440px, 100%); }
+.pj-err { margin: 0; color: var(--bad); font-size: var(--fs-sm); }
+.pj-addbtns { display: flex; justify-content: flex-end; gap: var(--sp-2); }
+
+@media (max-width: 760px) {
+  .pj-top { align-items: flex-start; }
+  .pj-title { flex-direction: column; gap: 0; }
+}
+
+/* unattributed — suggestions + bulk assign */
+.pj-un { margin-top: var(--sp-8); }
+.pj-unnote { margin: var(--sp-1) 0 var(--sp-3); color: var(--text-3); font-size: var(--fs-sm); max-width: var(--w-read); }
+.pj-unbar { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-2); margin-bottom: var(--sp-2); font-size: var(--fs-sm); color: var(--text-3); }
+.pj-unsel { width: auto; min-width: 12rem; }
+.pj-unrow { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-2) var(--sp-4); border-top: 1px solid var(--line); min-width: 0; font-size: var(--fs-sm); }
+.pj-unrow:first-child { border-top: 0; }
+.pj-uncheck { display: inline-flex; align-items: center; gap: var(--sp-2); cursor: pointer; }
+.pj-unname { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-2); text-decoration: none; }
+.pj-unname:hover { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+.pj-unsug { display: inline-flex; align-items: center; gap: var(--sp-2); color: var(--text-3); flex: none; }

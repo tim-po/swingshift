@@ -1,0 +1,8 @@
+node_modules/
+dist/
+dist-desktop/
+apps/desktop/renderer/
+apps/desktop/dist-app/
+.env.local
+shots/
+test-results/

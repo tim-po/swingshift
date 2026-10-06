@@ -1,0 +1,4 @@
+.hflash { position: fixed; left: 50%; bottom: var(--sp-6); transform: translateX(-50%); z-index: 50; max-width: min(560px, calc(100vw - var(--sp-8)));
+  background: var(--surface-3); color: var(--text); border: 1px solid var(--line-strong); border-left: 3px solid var(--ok);
+  border-radius: var(--r); padding: var(--sp-2) var(--sp-4); font-size: var(--fs-sm); box-shadow: var(--shadow-pop); cursor: pointer; overflow-wrap: anywhere; }
+.hflash.err { border-left-color: var(--bad); }

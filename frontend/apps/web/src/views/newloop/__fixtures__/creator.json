@@ -1,0 +1,501 @@
+{
+ "_source": "captured from the REAL mcp_loops tools: loop_creator_suggest, loop_creator_scaffold, loop_lint, authoring.schematic (what loop_schematic renders)",
+ "suggest": {
+  "ok": true,
+  "editable": true,
+  "goal": "Build and ship the checkout API with tests",
+  "signals": [
+   "builder"
+  ],
+  "roles": [
+   {
+    "id": "manager",
+    "role": "manager",
+    "why": "Holds the loop goal, decomposes it into independent slices, integrates only verified work, and finalizes when acceptance is met."
+   },
+   {
+    "id": "builder",
+    "role": "worker",
+    "why": "Does the implementation each round \u2014 real, working, committed code toward the loop goal."
+   },
+   {
+    "id": "reviewer",
+    "role": "input_provider",
+    "why": "Independently reviews each round's output against the loop goal and surfaces concrete, actionable gaps."
+   },
+   {
+    "id": "tester",
+    "role": "worker",
+    "why": "Verifies the work really runs and meets the loop goal's acceptance \u2014 deterministic evidence, not claims."
+   }
+  ],
+  "config": {
+   "name": "checkout-api-with-tests",
+   "goal": "Build and ship the checkout API with tests",
+   "substrate": "headless",
+   "contextCaps": {
+    "default": 200000,
+    "manager": 400000
+   },
+   "budget": {
+    "turnLimit": 16,
+    "managerFinalizeSteps": 4,
+    "minorOnlyExtraSteps": 2,
+    "minorSkipThreshold": 0.3
+   },
+   "humanInLoop": {
+    "owner": "owner",
+    "via": "manager"
+   },
+   "briefingMode": "baseline",
+   "briefingStart": "auto",
+   "inputMode": "evidence",
+   "steps": {
+    "manager": {
+     "type": "agent",
+     "role": "manager",
+     "personality": "A pragmatic delivery lead who decomposes the loop goal into sharp, independent slices and ships verified work.",
+     "goal": "Drive the loop goal to done: decompose it, assign slices to the workers, integrate only verified work, and finalize when the loop goal's acceptance is met.",
+     "maxRepeatTurns": 1,
+     "maxTurnMinutes": 20
+    },
+    "builder": {
+     "type": "agent",
+     "role": "worker",
+     "personality": "A senior engineer who writes real, working, verified code and crisp docs.",
+     "goal": "Implement the slices the manager assigns toward the loop goal; keep it working, tested, and clearly committed.",
+     "maxRepeatTurns": 3,
+     "maxTurnMinutes": 45
+    },
+    "reviewer": {
+     "type": "agent",
+     "role": "input_provider",
+     "personality": "A sharp, independent reviewer who probes the team's work against the loop goal.",
+     "goal": "Review the team's output against the loop goal each round and surface concrete, actionable gaps.",
+     "maxRepeatTurns": 1,
+     "maxTurnMinutes": 30
+    },
+    "tester": {
+     "type": "agent",
+     "role": "worker",
+     "personality": "A senior engineer who writes real, working, verified code and crisp docs.",
+     "goal": "Implement the slices the manager assigns toward the loop goal; keep it working, tested, and clearly committed.",
+     "maxRepeatTurns": 3,
+     "maxTurnMinutes": 45
+    }
+   },
+   "stepOrder": [
+    "manager",
+    "builder",
+    "reviewer",
+    "tester"
+   ]
+  },
+  "warnings": [
+   "loop is `unlinked` \u2014 no projectId; project is inferred from goal-path as a legacy backfill. Bind a Project to make the team target real."
+  ],
+  "lint": [],
+  "note": "This is a suggestion derived from your goal \u2014 edit the roles, personas, and per-role goals freely. It is not a fixed template."
+ },
+ "checkClean": {
+  "ok": true,
+  "errors": [],
+  "warnings": [
+   "loop is `unlinked` \u2014 no projectId; project is inferred from goal-path as a legacy backfill. Bind a Project to make the team target real."
+  ],
+  "lints": [],
+  "schematic": {
+   "name": "checkout-api-with-tests",
+   "sections": [
+    {
+     "title": "Identity",
+     "fields": [
+      {
+       "key": "name",
+       "label": "Name",
+       "value": "checkout-api-with-tests"
+      },
+      {
+       "key": "goal",
+       "label": "North-star goal",
+       "value": "Build and ship the checkout API with tests"
+      },
+      {
+       "key": "substrate",
+       "label": "Substrate",
+       "value": "headless"
+      }
+     ]
+    },
+    {
+     "title": "Context caps",
+     "fields": [
+      {
+       "key": "contextCaps.default",
+       "label": "Default cap",
+       "value": 200000
+      },
+      {
+       "key": "contextCaps.manager",
+       "label": "Manager cap",
+       "value": 400000
+      }
+     ]
+    },
+    {
+     "title": "Budget",
+     "fields": [
+      {
+       "key": "budget.turnLimit",
+       "label": "Turn limit",
+       "value": 16
+      },
+      {
+       "key": "budget.managerFinalizeSteps",
+       "label": "Manager finalize steps",
+       "value": 4
+      },
+      {
+       "key": "budget.minorOnlyExtraSteps",
+       "label": "Minor-only extra steps",
+       "value": 2
+      },
+      {
+       "key": "budget.minorSkipThreshold",
+       "label": "Minor skip threshold",
+       "value": 0.3
+      }
+     ]
+    },
+    {
+     "title": "Human in loop",
+     "fields": [
+      {
+       "key": "humanInLoop.owner",
+       "label": "Owner",
+       "value": "owner"
+      },
+      {
+       "key": "humanInLoop.via",
+       "label": "Via",
+       "value": "manager"
+      }
+     ]
+    }
+   ],
+   "steps": [
+    {
+     "id": "manager",
+     "type": "agent",
+     "role": "manager",
+     "model": null,
+     "maxRepeatTurns": 1,
+     "maxTurnMinutes": 20,
+     "personality": "A pragmatic delivery lead who decomposes the loop goal into sharp, independent slices and ships verified work.",
+     "goal": "Drive the loop goal to done: decompose it, assign slices to the workers, integrate only verified work, and finalize when the loop goal's acceptance is met."
+    },
+    {
+     "id": "builder",
+     "type": "agent",
+     "role": "worker",
+     "model": null,
+     "maxRepeatTurns": 3,
+     "maxTurnMinutes": 45,
+     "personality": "A senior engineer who writes real, working, verified code and crisp docs.",
+     "goal": "Implement the slices the manager assigns toward the loop goal; keep it working, tested, and clearly committed."
+    },
+    {
+     "id": "reviewer",
+     "type": "agent",
+     "role": "input_provider",
+     "model": null,
+     "maxRepeatTurns": 1,
+     "maxTurnMinutes": 30,
+     "personality": "A sharp, independent reviewer who probes the team's work against the loop goal.",
+     "goal": "Review the team's output against the loop goal each round and surface concrete, actionable gaps."
+    },
+    {
+     "id": "tester",
+     "type": "agent",
+     "role": "worker",
+     "model": null,
+     "maxRepeatTurns": 3,
+     "maxTurnMinutes": 45,
+     "personality": "A senior engineer who writes real, working, verified code and crisp docs.",
+     "goal": "Implement the slices the manager assigns toward the loop goal; keep it working, tested, and clearly committed."
+    }
+   ],
+   "stepOrder": [
+    {
+     "step": "manager"
+    },
+    {
+     "step": "builder"
+    },
+    {
+     "step": "reviewer"
+    },
+    {
+     "step": "tester"
+    }
+   ],
+   "derived": {
+    "manager": "manager",
+    "workers": [
+     "builder",
+     "tester"
+    ],
+    "inputs": [
+     "reviewer"
+    ],
+    "subloops": [],
+    "n_workers": 2,
+    "n_inputs": 1,
+    "turnLimit": 16,
+    "windDownWorkerTurns": 4,
+    "windDownManagerTurns": 4,
+    "windDownTotal": 8,
+    "rounds_per_pass": 4
+   }
+  }
+ },
+ "checkEdited": {
+  "ok": true,
+  "errors": [],
+  "warnings": [
+   "loop is `unlinked` \u2014 no projectId; project is inferred from goal-path as a legacy backfill. Bind a Project to make the team target real."
+  ],
+  "lints": [
+   {
+    "level": "warn",
+    "rule": "no-todos-in-identity",
+    "where": "steps.builder.goal",
+    "message": "goal reads like a todo/checklist \u2014 move task steps to the loop goal; keep identity durable and loop-agnostic."
+   },
+   {
+    "level": "warn",
+    "rule": "product-detail-in-loop-goal",
+    "where": "steps.builder.goal",
+    "message": "goal names product/path specifics (/home/x/app, /home/x/app.py) \u2014 those belong in the loop goal so the agent stays reusable."
+   }
+  ],
+  "schematic": {
+   "name": "checkout-api-with-tests",
+   "sections": [
+    {
+     "title": "Identity",
+     "fields": [
+      {
+       "key": "name",
+       "label": "Name",
+       "value": "checkout-api-with-tests"
+      },
+      {
+       "key": "goal",
+       "label": "North-star goal",
+       "value": "Build and ship the checkout API with tests"
+      },
+      {
+       "key": "substrate",
+       "label": "Substrate",
+       "value": "headless"
+      }
+     ]
+    },
+    {
+     "title": "Context caps",
+     "fields": [
+      {
+       "key": "contextCaps.default",
+       "label": "Default cap",
+       "value": 200000
+      },
+      {
+       "key": "contextCaps.manager",
+       "label": "Manager cap",
+       "value": 400000
+      }
+     ]
+    },
+    {
+     "title": "Budget",
+     "fields": [
+      {
+       "key": "budget.turnLimit",
+       "label": "Turn limit",
+       "value": 16
+      },
+      {
+       "key": "budget.managerFinalizeSteps",
+       "label": "Manager finalize steps",
+       "value": 4
+      },
+      {
+       "key": "budget.minorOnlyExtraSteps",
+       "label": "Minor-only extra steps",
+       "value": 2
+      },
+      {
+       "key": "budget.minorSkipThreshold",
+       "label": "Minor skip threshold",
+       "value": 0.3
+      }
+     ]
+    },
+    {
+     "title": "Human in loop",
+     "fields": [
+      {
+       "key": "humanInLoop.owner",
+       "label": "Owner",
+       "value": "owner"
+      },
+      {
+       "key": "humanInLoop.via",
+       "label": "Via",
+       "value": "manager"
+      }
+     ]
+    }
+   ],
+   "steps": [
+    {
+     "id": "manager",
+     "type": "agent",
+     "role": "manager",
+     "model": null,
+     "maxRepeatTurns": 1,
+     "maxTurnMinutes": 20,
+     "personality": "A pragmatic delivery lead who decomposes the loop goal into sharp, independent slices and ships verified work.",
+     "goal": "Drive the loop goal to done: decompose it, assign slices to the workers, integrate only verified work, and finalize when the loop goal's acceptance is met."
+    },
+    {
+     "id": "builder",
+     "type": "agent",
+     "role": "worker",
+     "model": null,
+     "maxRepeatTurns": 3,
+     "maxTurnMinutes": 45,
+     "personality": "A senior engineer who writes real, working, verified code and crisp docs.",
+     "goal": "TODO: fix /home/x/app.py then ship"
+    },
+    {
+     "id": "reviewer",
+     "type": "agent",
+     "role": "input_provider",
+     "model": null,
+     "maxRepeatTurns": 1,
+     "maxTurnMinutes": 30,
+     "personality": "A sharp, independent reviewer who probes the team's work against the loop goal.",
+     "goal": "Review the team's output against the loop goal each round and surface concrete, actionable gaps."
+    }
+   ],
+   "stepOrder": [
+    {
+     "step": "manager"
+    },
+    {
+     "step": "builder"
+    },
+    {
+     "step": "reviewer"
+    }
+   ],
+   "derived": {
+    "manager": "manager",
+    "workers": [
+     "builder"
+    ],
+    "inputs": [
+     "reviewer"
+    ],
+    "subloops": [],
+    "n_workers": 1,
+    "n_inputs": 1,
+    "turnLimit": 16,
+    "windDownWorkerTurns": 2,
+    "windDownManagerTurns": 4,
+    "windDownTotal": 6,
+    "rounds_per_pass": 3
+   }
+  }
+ },
+ "scaffoldAdd": {
+  "ok": true,
+  "config": {
+   "name": "draft",
+   "goal": "Build and ship the checkout API with tests",
+   "substrate": "headless",
+   "contextCaps": {
+    "default": 200000,
+    "manager": 400000
+   },
+   "budget": {
+    "turnLimit": 20,
+    "managerFinalizeSteps": 4,
+    "minorOnlyExtraSteps": 2,
+    "minorSkipThreshold": 0.3
+   },
+   "humanInLoop": {
+    "owner": "owner",
+    "via": "manager"
+   },
+   "briefingMode": "baseline",
+   "briefingStart": "auto",
+   "inputMode": "evidence",
+   "steps": {
+    "manager": {
+     "type": "agent",
+     "role": "manager",
+     "personality": "A pragmatic delivery lead who decomposes the loop goal into sharp, independent slices and ships verified work.",
+     "goal": "Drive the loop goal to done: decompose it, assign slices to the workers, integrate only verified work, and finalize when the loop goal's acceptance is met.",
+     "maxRepeatTurns": 1,
+     "maxTurnMinutes": 20
+    },
+    "builder": {
+     "type": "agent",
+     "role": "worker",
+     "personality": "A senior engineer who writes real, working, verified code and crisp docs.",
+     "goal": "Implement the slices the manager assigns toward the loop goal; keep it working, tested, and clearly committed.",
+     "maxRepeatTurns": 3,
+     "maxTurnMinutes": 45
+    },
+    "reviewer": {
+     "type": "agent",
+     "role": "input_provider",
+     "personality": "A sharp, independent reviewer who probes the team's work against the loop goal.",
+     "goal": "Review the team's output against the loop goal each round and surface concrete, actionable gaps.",
+     "maxRepeatTurns": 1,
+     "maxTurnMinutes": 30
+    },
+    "tester": {
+     "type": "agent",
+     "role": "worker",
+     "personality": "A senior engineer who writes real, working, verified code and crisp docs.",
+     "goal": "Implement the slices the manager assigns toward the loop goal; keep it working, tested, and clearly committed.",
+     "maxRepeatTurns": 3,
+     "maxTurnMinutes": 45
+    },
+    "input_provider": {
+     "type": "agent",
+     "role": "input_provider",
+     "personality": "A sharp, independent reviewer who probes the team's work against the loop goal.",
+     "goal": "Review the team's output against the loop goal each round and surface concrete, actionable gaps.",
+     "maxRepeatTurns": 1,
+     "maxTurnMinutes": 30
+    }
+   },
+   "stepOrder": [
+    "manager",
+    "builder",
+    "reviewer",
+    "tester",
+    "input_provider"
+   ]
+  },
+  "warnings": [
+   "loop is `unlinked` \u2014 no projectId; project is inferred from goal-path as a legacy backfill. Bind a Project to make the team target real."
+  ],
+  "lint": []
+ }
+}

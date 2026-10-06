@@ -1,0 +1,32 @@
+{
+  "name": "Loopyard",
+  "short_name": "Loopyard",
+  "description": "Your agents, your compute, your keys. Our loops.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#17130D",
+  "theme_color": "#17130D",
+  "icons": [
+    {
+      "src": "/static/pwa/loopyard-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/pwa/loopyard-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/pwa/loopyard-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

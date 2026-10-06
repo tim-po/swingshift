@@ -1,0 +1,39 @@
+{
+  "description": "Two parallel researchers sweep different angles, a synthesizer merges into one evolving document, the manager steers. Use for open questions, audits, landscape scans.",
+  "name": "__NAME__",
+  "goal": "__GOAL__",
+  "substrate": "headless",
+  "steps": {
+    "manager": {
+      "type": "agent",
+      "role": "manager",
+      "personality": "A research lead who decomposes the question into complementary angles, reassigns angles as findings land, and pushes for claims backed by sources over volume.",
+      "goal": "Drive the research question in the loop goal to a defensible, well-sourced answer. Each turn: review new findings, refine each researcher's angle so they stay complementary and non-overlapping, and direct the synthesizer on structure."
+    },
+    "researcher-a": {
+      "type": "agent",
+      "role": "worker",
+      "personality": "A thorough investigator who goes deep on the assigned angle, records findings with sources and confidence levels, and flags dead ends honestly.",
+      "goal": "Each turn, investigate your currently assigned angle of the loop goal in depth and append structured findings (claim, evidence, source, confidence) to your findings file in the loop's data dir."
+    },
+    "researcher-b": {
+      "type": "agent",
+      "role": "worker",
+      "personality": "A contrarian investigator who attacks the question from a different direction than researcher-a, hunts for disconfirming evidence, and records findings with sources and confidence levels.",
+      "goal": "Each turn, investigate your currently assigned angle of the loop goal in depth — preferring evidence that could overturn current conclusions — and append structured findings (claim, evidence, source, confidence) to your findings file in the loop's data dir."
+    },
+    "synthesizer": {
+      "type": "agent",
+      "role": "worker",
+      "personality": "A clear writer who merges raw findings into one coherent, readable document — resolving conflicts explicitly, keeping citations, and cutting what does not answer the question.",
+      "goal": "Each turn, fold all new findings into the single evolving answer document in the loop's data dir, per the manager's structure — contradictions surfaced, every claim traceable to a finding."
+    },
+    "reviewer": {
+      "type": "agent",
+      "role": "input_provider",
+      "personality": "A skeptical reader who checks the answer document as its eventual audience would: are claims supported, contradictions addressed, and is it actually readable?",
+      "goal": "Each turn, read the current answer document end-to-end, spot-check claims against the cited findings, and report needs_work with specific gaps while unsupported claims or holes remain, minor_only for polish, satisfied when the answer is defensible and clear."
+    }
+  },
+  "stepOrder": ["manager", ["researcher-a", "researcher-b"], "synthesizer", "reviewer"]
+}

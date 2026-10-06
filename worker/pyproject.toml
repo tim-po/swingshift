@@ -1,0 +1,44 @@
+[project]
+name = "bot-squad-worker"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "icalendar>=5.0",
+    "caldav>=1.3",
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    # WebSocket protocol backend for uvicorn. Plain `uvicorn` ships NO ws
+    # implementation, so a real (non-TestClient) server 404s the /ws/terminal
+    # handshake with "No supported WebSocket library" — the dashboard's web
+    # terminal (QoL R4 / docs/TERMINAL.md) can't connect without this. wsproto is
+    # lean + pure-python (only dep h11, already required by uvicorn) — preferred
+    # over the heavier full uvicorn[standard] extra.
+    "wsproto>=1.2",
+    "apscheduler>=3.10",
+    "httpx>=0.27",
+    "telethon>=1.36",
+    # Telethon speaks raw MTProto (TCP) and does NOT honor HTTPS_PROXY env like
+    # httpx; on DPI-blocked hosts it must be handed an explicit proxy= tuple.
+    # python-socks provides the HTTP/SOCKS proxy connector Telethon uses.
+    "python-socks[asyncio]>=2.4",
+    # AutoGen (Microsoft) — shared multi-agent framework available to EVERY coord
+    # project (all coords run from this one venv). Gives agents + teams
+    # (RoundRobin/Selector group chats) + termination conditions for running
+    # bounded agent loops instead of bespoke sprint code. Anthropic client is the
+    # default (swarm is Claude-based); tiktoken is required by that client but
+    # not pulled by the [anthropic] extra. 0.x pinned <0.8 — the API still churns
+    # across minors, so a bootstrap on a new host gets the verified line.
+    "autogen-agentchat>=0.7.5,<0.8",
+    "autogen-ext[anthropic]>=0.7.5,<0.8",
+    "tiktoken>=0.14",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.23",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

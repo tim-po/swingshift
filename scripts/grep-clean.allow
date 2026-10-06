@@ -1,0 +1,37 @@
+# Static grep-clean allowlist (PHASE-B-SPEC D11, §4 B3 step 7), read by scripts/grep_clean.py.
+# Row: <kind> <pattern> # <one-line reason>
+#   exclude <glob>            unshipped files only; fails if it matches a shipped path or no tracked file
+#   text <path>:<line-regex>  one TEXT hit in a SHIPPED file; functional lines must be fixed, never listed
+# Spec rows for scripts/redesign-stack.sh and config/projects.toml.example are absent on purpose:
+# B0 removed their hits, and a row that matches nothing hit-bearing is dropped rather than kept stale.
+
+# ── exclude: files that never ship ──
+exclude **/tests/** # test fixtures and sample project names; tests/ never ships (§1.5)
+exclude docs/** # prose docs; not shipped
+exclude loopyard/** # the repo's roadmap/feature/report notes dir (not the install root); not shipped
+exclude worker/bot_squad_worker/tg_*.py # coordinator-only Telegram; bundle-excluded (§1.5)
+exclude worker/bot_squad_worker/{icloud_calendar,sleep,xray_resolve,autonomous,refresh_oauth,deploy}.py # coordinator-only; bundle-excluded
+exclude worker/bot_squad_worker/autoupdate*.py # coordinator self-update; bundle-excluded
+exclude worker/bot_squad_worker/core/{librarian,context_processor}.py # coordinator-only; bundle-excluded
+exclude frontend/{*,packages/**,apps/desktop/**,apps/web/*,apps/web/src/**} # web/desktop sources; the bundle ships only the BUILT web app (frontend/apps/web/dist/**, 1.11), which stays grepped
+exclude scripts/grep-clean.allow # this file: its text rows quote the hits they allow
+exclude scripts/phase_b_acceptance.sh # the B3 harness greps FOR these strings; repo-only, never shipped
+exclude scripts/testing/** # fake-claude + its test; repo-only test harness, never shipped
+exclude scripts/dashgate_boot_smoke.py # dev-only boot smoke for the decoupled gate (usage line names the coordinator venv); repo-only, never shipped
+
+# ── text: TEXT lines (docstrings/comments/prose) inside the shipped set ──
+text mcp_loops/paths.py:(fresh user who had never heard of|and it wrote ``~/bot-swarm/data|errors\. The hardcoded ``~/bot-swarm`` default|``/home/\.\.\./bot-swarm/``, so|a ``~/bot-swarm`` that does not exist|with no ``~/bot-swarm`` guess|never touches a ``~/bot-swarm`` it) # module/function docstrings explaining the A1 fix
+text mcp_loops/headless.py:^# ``~/bot-swarm`` it doesn't own # comment on the install-relative defaults (§2.2 TEXT headless.py:48)
+text mcp_loops/cli.py:The trap: from ``~/bot-swarm`` # docstring on the cwd-import trap (§2.2 TEXT cli.py:69)
+text mcp_loops/creator_context.py:about the Loopyard / bot-swarm environment # prose inside the creator's background text block (§2.2 TEXT)
+text mcp_loops/products_gather.py:(bot-swarm` /|bot-swarm-brand|too shallow to name a project) # comment + docstring examples of path→project naming (§2.2 TEXT :117-132)
+text mcp_loops/telegram_optional.py:(is bot-swarm code, not a Loopyard dependency|through ``bot-swarm\.pth``) # D8 module docstring: why Telegram is optional
+text tracking_ui/loops_html.py:// \(e\.g\. "Bot Swarm" for the bot-swarm remote\) # JS comment in the dashboard template (§2.2 TEXT :1719)
+text worker/bot_squad_worker/__main__.py:^    python -m bot_squad_worker --config /home/www/bot-squad/config$ # usage docstring example (§2.2 TEXT __main__.py:4)
+text worker/bot_squad_worker/actions.py:T-0003 in the bot-swarm punch list # docstring provenance note (§2.2 TEXT actions.py)
+text worker/bot_squad_worker/core/heartbeat.py:^# the install root \(…/bot-swarm on the coordinator\) # comment line R28 split out of heartbeat.py:46
+text worker/bot_squad_worker/dispatch_inbox.py:\(A1: no ``~/bot-swarm`` leak\) # docstring (§2.2 TEXT dispatch_inbox.py:160)
+text worker/bot_squad_worker/sessions.py:If role is provided \(bot-swarm\), # docstring of spawn_session (§2.2 TEXT sessions.py)
+text worker/bot_squad_worker/templates/identity/coordinator.md:of this bot-swarm project # coordinator identity template prose (shipped .md)
+text worker/bot_squad_worker/templates/identity/planner.md:for this bot-swarm project # planner identity template prose (shipped .md)
+text tracking_ui/gate.py:^    "(swarmdev|vellum|umem|computation|plancheck)": "bot-swarm-coord(core|vellum|umem|computation|plancheck)",$ # PROJECT_UNIT dict values: the LIVE coordinator systemd unit names the gate's per-project panel restarts; renaming breaks the panel (identical-behavior port)

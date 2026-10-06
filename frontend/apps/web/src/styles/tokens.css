@@ -1,0 +1,139 @@
+/* Design tokens — the ONLY place raw colours, sizes and spacing live.
+ * View CSS reads these; it never invents a px font-size, a hex, or an rgba.
+ *
+ * Voice: Swingshift, set on a time card. The whole page is buff card stock,
+ * ink is near-black and time-card red is the one printed colour: the single
+ * primary action on a screen and the punched row of the mark. Night is the same
+ * card after dark (carbon-paper black, buff ink). Instrument Serif speaks (page
+ * titles, loop names, wordmark); Courier Prime is the typed machine voice (labels,
+ * counts, ids). Hairlines only, nearly square corners, no effects.
+ *
+ * Theme: light by default; Night follows the OS unless <html data-theme> pins one.
+ * Only colour tokens change between the two. */
+:root {
+  color-scheme: light;
+
+  /* ── surfaces (back → front) ── */
+  --bg: #ece2c6;
+  --surface: #f4ecd6;
+  --surface-2: #e4d8b6;
+  --surface-3: #dfd3b2;
+  --hover: rgba(33, 26, 16, 0.05);
+  --press: rgba(33, 26, 16, 0.09);
+
+  /* ── text ── */
+  --text: #211a10;
+  --text-2: #43392a;
+  --text-3: #574b36;
+  --text-4: #665a44;
+
+  /* ── lines (hairlines are the only structure) ── */
+  --line: rgba(33, 26, 16, 0.14);
+  --line-strong: rgba(33, 26, 16, 0.28);
+
+  /* ── brand + status ── (the primary action keeps the old --ember name) */
+  --ember: #b3321f; --ember-soft: #c4402b; --ember-deep: #8e2515; --on-ember: #fbf3e2;
+  --ember-tint: rgba(179, 50, 31, 0.13); --ember-line: rgba(179, 50, 31, 0.34);
+  --ok: #33612f;   --ok-tint: rgba(51, 97, 47, 0.13);  --ok-line: rgba(51, 97, 47, 0.34);
+  --warn: #7a4f08; --warn-tint: rgba(122, 79, 8, 0.13); --warn-line: rgba(122, 79, 8, 0.34);
+  --bad: #a3281c;  --bad-tint: rgba(163, 40, 28, 0.13); --bad-line: rgba(163, 40, 28, 0.34);
+  --info: #34557f; --info-tint: rgba(52, 85, 127, 0.13); --info-line: rgba(52, 85, 127, 0.34);
+
+  /* ── the colour field (sidebar) ── */
+  --field: #ece2c6; --field-2: #e4d8b6; --field-3: #dfd3b2; --field-edge: rgba(33, 26, 16, 0.28);
+  --on-field: #211a10; --on-field-2: #43392a; --on-field-3: #574b36;
+  --field-line: rgba(33, 26, 16, 0.16); --field-line-strong: rgba(33, 26, 16, 0.3); --field-hover: rgba(33, 26, 16, 0.05);
+  --field-action: #211a10; --field-action-soft: #3a2f20; --on-field-action: #f4ecd6;
+  --mark: #b3321f; --wordmark: #211a10;
+
+  /* ── flip-dot boards ── dark hardware in both themes: buff discs, red discs for alerts */
+  --board: #231c13; --dot-off: #322a20; --dot-rim: rgba(236, 226, 198, 0.1);
+  --dot-on: #ece2c6; --dot-alert: #e0553c; --plate: #a89d82;
+
+  /* ── type ── display = the brand voice (page titles, wordmark); machine = tiny labels, counts, ids */
+  --display: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+  --fw-display: 400; --ls-display: -0.005em;
+  --sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --machine: 'Courier Prime', 'Courier New', ui-monospace, monospace;
+  --mono: var(--machine);
+  --fs-2xs: 11px;  /* tiny labels, counts */
+  --fs-xs: 12px;   /* meta, captions */
+  --fs-sm: 13px;   /* secondary UI, buttons */
+  --fs-base: 14px; /* body */
+  --fs-md: 16px;   /* card titles */
+  --fs-lg: 20px;   /* section titles, wordmark */
+  --fs-xl: 40px;   /* page titles: the one big voice on each screen */
+  --fw-regular: 400; --fw-medium: 500; --fw-semi: 600; --fw-bold: 700;
+  --lh-tight: 1.25; --lh: 1.5; --lh-loose: 1.65;
+
+  /* ── space (4px grid) ── */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 20px;
+  --sp-6: 24px; --sp-8: 32px; --sp-10: 40px; --sp-12: 48px; --sp-16: 64px;
+
+  /* ── shape + depth ── flat: popovers are a hairline plus the lightest lift, nothing decorative */
+  --r-xs: 2px; --r-sm: 3px; --r: 4px; --r-lg: 6px; --r-pill: 999px;
+  --scrim: rgba(33, 26, 16, 0.4);
+  --shadow-pop: 0 8px 24px -12px rgba(33, 26, 16, 0.25), 0 0 0 1px var(--line-strong);
+  --shadow-modal: 0 24px 48px -24px rgba(33, 26, 16, 0.25), 0 0 0 1px var(--line-strong);
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --dur: 140ms;
+
+  /* ── layout ── */
+  --bp-mobile: 760px;
+  --w-page: 1120px; --w-read: 820px; --w-form: 680px;
+  --sidebar-w: 232px;
+
+  /* ── legacy aliases (older view CSS reads these; prefer the names above) ── */
+  --ink: var(--bg); --ink-2: var(--surface); --ink-3: var(--surface-3);
+  --bone: var(--text); --bone-dim: var(--text-2); --stone: var(--text-3);
+  --phos: var(--ok); --rose: var(--bad);
+}
+
+/* ── Night: the same card after dark. Declared twice (OS preference, and a pinned
+ * data-theme) because CSS can't share one block between a media query and a selector. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --bg: #16120d; --surface: #1d1812; --surface-2: #241e17; --surface-3: #2c251c;
+    --hover: rgba(236, 226, 198, 0.05); --press: rgba(236, 226, 198, 0.09);
+    --text: #ece2c6; --text-2: #cdc2a5; --text-3: #b0a68c; --text-4: #9a917a;
+    --line: rgba(236, 226, 198, 0.12); --line-strong: rgba(236, 226, 198, 0.24);
+    --ember: #e0553c; --ember-soft: #ea6a51; --ember-deep: #b3321f; --on-ember: #16120d;
+    --ember-tint: rgba(224, 85, 60, 0.14); --ember-line: rgba(224, 85, 60, 0.36);
+    --ok: #7fb77a;   --ok-tint: rgba(127, 183, 122, 0.14);  --ok-line: rgba(127, 183, 122, 0.36);
+    --warn: #d6a24a; --warn-tint: rgba(214, 162, 74, 0.14); --warn-line: rgba(214, 162, 74, 0.36);
+    --bad: #ef6f5e;  --bad-tint: rgba(239, 111, 94, 0.14); --bad-line: rgba(239, 111, 94, 0.36);
+    --info: #8fb0d9; --info-tint: rgba(143, 176, 217, 0.14); --info-line: rgba(143, 176, 217, 0.36);
+    --field: #16120d; --field-2: #1d1812; --field-3: #2c251c; --field-edge: rgba(236, 226, 198, 0.2);
+    --on-field: #ece2c6; --on-field-2: #cdc2a5; --on-field-3: #b0a68c;
+    --field-line: rgba(236, 226, 198, 0.12); --field-line-strong: rgba(236, 226, 198, 0.24); --field-hover: rgba(236, 226, 198, 0.05);
+    --field-action: #ece2c6; --field-action-soft: #f4ecd6; --on-field-action: #16120d;
+    --mark: #e0553c; --wordmark: #ece2c6;
+    --board: #0d0a07; --dot-off: #1f1a13; --dot-rim: rgba(236, 226, 198, 0.08); --plate: #948a72;
+    --scrim: rgba(0, 0, 0, 0.6);
+    --shadow-pop: 0 8px 24px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--line-strong);
+    --shadow-modal: 0 24px 48px -24px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--line-strong);
+  }
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #16120d; --surface: #1d1812; --surface-2: #241e17; --surface-3: #2c251c;
+  --hover: rgba(236, 226, 198, 0.05); --press: rgba(236, 226, 198, 0.09);
+  --text: #ece2c6; --text-2: #cdc2a5; --text-3: #b0a68c; --text-4: #9a917a;
+  --line: rgba(236, 226, 198, 0.12); --line-strong: rgba(236, 226, 198, 0.24);
+  --ember: #e0553c; --ember-soft: #ea6a51; --ember-deep: #b3321f; --on-ember: #16120d;
+  --ember-tint: rgba(224, 85, 60, 0.14); --ember-line: rgba(224, 85, 60, 0.36);
+  --ok: #7fb77a;   --ok-tint: rgba(127, 183, 122, 0.14);  --ok-line: rgba(127, 183, 122, 0.36);
+  --warn: #d6a24a; --warn-tint: rgba(214, 162, 74, 0.14); --warn-line: rgba(214, 162, 74, 0.36);
+  --bad: #ef6f5e;  --bad-tint: rgba(239, 111, 94, 0.14); --bad-line: rgba(239, 111, 94, 0.36);
+  --info: #8fb0d9; --info-tint: rgba(143, 176, 217, 0.14); --info-line: rgba(143, 176, 217, 0.36);
+  --field: #16120d; --field-2: #1d1812; --field-3: #2c251c; --field-edge: rgba(236, 226, 198, 0.2);
+  --on-field: #ece2c6; --on-field-2: #cdc2a5; --on-field-3: #b0a68c;
+  --field-line: rgba(236, 226, 198, 0.12); --field-line-strong: rgba(236, 226, 198, 0.24); --field-hover: rgba(236, 226, 198, 0.05);
+  --field-action: #ece2c6; --field-action-soft: #f4ecd6; --on-field-action: #16120d;
+  --mark: #e0553c; --wordmark: #ece2c6;
+  --board: #0d0a07; --dot-off: #1f1a13; --dot-rim: rgba(236, 226, 198, 0.08); --plate: #948a72;
+  --scrim: rgba(0, 0, 0, 0.6);
+  --shadow-pop: 0 8px 24px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--line-strong);
+  --shadow-modal: 0 24px 48px -24px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--line-strong);
+}

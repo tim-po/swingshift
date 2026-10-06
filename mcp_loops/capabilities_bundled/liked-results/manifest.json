@@ -1,0 +1,9 @@
+{
+  "id": "liked-results",
+  "name": "Liked Results",
+  "version": "1",
+  "entityKinds": ["result"],
+  "dataDir": "results",
+  "page": { "kind": "html", "asset": "page.html" },
+  "settings": {}
+}

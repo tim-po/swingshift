@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loopyard · Workspaces</title>
+<meta name="theme-color" content="#17130D">
+<meta name="description" content="Loopyard — your agents, your compute, your keys. Our loops.">
+<!-- PWA (QoL R6 / M2): installable dashboard. Manifest + icons served locally. -->
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Loopyard">
+<link rel="apple-touch-icon" href="/static/pwa/loopyard-192.png">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%2317130D'/><rect x='12' y='19' width='40' height='26' rx='13' fill='none' stroke='%23FF6A2B' stroke-width='5' stroke-linecap='round'/><circle cx='49' cy='32' r='5' fill='%2346E0A0'/></svg>">
+<style>
+  :root{
+    --bg:#eef2f1; --bg2:#f6f9f8;
+    --panel:#ffffff; --panel2:#f4f7f6; --panel3:#eaefed;
+    --side:#17211d; --side2:#1f2b26; --side-fg:#cdd8d3; --side-mut:#7f8f88;
+    --line:#e3e9e7; --line2:#d3dbd8;
+    --fg:#17211d; --mut:#5c6b64; --accent:#2f9e77; --accent2:#237a5b;
+    --user:#dff1e9; --bot:#ffffff; --warn:#c76b3a;
+    --artifact:#2f9e77; --tag:#c79a3a; --task:#4a7fd0; --entity:#8a7bd8;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+       color:var(--fg);background:var(--bg);display:flex;height:100vh;overflow:hidden}
+
+  /* ---- left sidebar = workspace switcher + PAGES ---- */
+  .side{width:238px;flex:0 0 238px;background:var(--side);color:var(--side-fg);
+        display:flex;flex-direction:column;padding:12px 10px}
+  /* workspace switcher (top-left, Notion-style) */
+  .wsswitch{position:relative;display:flex;align-items:center;gap:11px;
+        padding:9px 10px;border-radius:11px;cursor:pointer;transition:background .12s}
+  .wsswitch:hover{background:var(--side2)}
+  .wsswitch .ava{width:30px;height:30px;border-radius:8px;flex:0 0 30px;
+        display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff;
+        box-shadow:0 1px 2px rgba(0,0,0,.25)}
+  .wsswitch .lbl{flex:1;min-width:0}
+  .wsswitch .lbl .nm{font-weight:700;color:#fff;font-size:14px;line-height:1.2;
+        white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .wsswitch .lbl .mut{color:var(--side-mut);font-size:11px;margin-top:1px}
+  .wsswitch .chev{color:var(--side-mut);font-size:11px;transition:transform .12s}
+  .wsswitch:hover .chev{color:var(--side-fg)}
+  .wsswitch select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;font:inherit}
+  .side .sep{height:1px;background:var(--side2);margin:12px 6px 4px}
+  .side .seclabel{color:var(--side-mut);font-size:10.5px;text-transform:uppercase;
+        letter-spacing:.09em;font-weight:700;padding:8px 12px 6px}
+  .page{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:9px;cursor:pointer;
+        color:var(--side-fg);user-select:none;font-weight:600;font-size:13.5px;transition:background .12s}
+  .page:hover{background:var(--side2)}
+  .page.active{background:var(--accent);color:#fff}
+  .page .ic{width:16px;text-align:center;opacity:.9;font-size:14px}
+  .side .foot{margin-top:auto;padding:12px 10px 4px;color:var(--side-mut);font-size:11.5px;
+        border-top:1px solid var(--side2)}
+  .side .foot a{color:var(--side-mut)}
+  .side .foot a:hover{color:var(--side-fg)}
+
+  /* ---- main ---- */
+  .main{flex:1;display:flex;flex-direction:column;min-width:0}
+  .head{display:flex;align-items:center;justify-content:space-between;gap:16px;
+        padding:15px 24px;border-bottom:1px solid var(--line);background:var(--bg2)}
+  .crumb .title{font-size:19px;font-weight:700;display:flex;align-items:center;gap:9px}
+  .crumb .title .pgic{font-size:16px;opacity:.7}
+  .crumb .sub{color:var(--mut);font-size:12.5px;margin-top:1px}
+
+  .body{flex:1;min-height:0;overflow:auto;padding:20px 22px}
+  .pane{display:none;height:100%}
+  .pane.active{display:block}
+  .pane.chat.active,.pane.graphify.active,.pane.terminal.active,.pane.newloop.active{display:flex;flex-direction:column;height:100%}
+
+  /* ---- chat ---- */
+  .banner{background:#fff6ee;border:1px solid #f0d9c6;color:var(--warn);
+    padding:8px 12px;border-radius:9px;font-size:12.5px;margin-bottom:10px}
+  .msgs{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:10px;padding:4px 2px}
+  .msg{max-width:74%;padding:9px 13px;border-radius:13px;border:1px solid var(--line);white-space:pre-wrap;word-wrap:break-word}
+  .msg.user{align-self:flex-end;background:var(--user);border-color:#c9e6da}
+  .msg.assistant,.msg.system{align-self:flex-start;background:var(--bot)}
+  .msg .meta{font-size:10.5px;color:var(--mut);margin-top:5px;display:flex;gap:7px}
+  .badge{font-size:10px;padding:1px 6px;border-radius:6px;background:var(--panel3);color:var(--mut)}
+  .composer{display:flex;gap:8px;padding-top:12px;border-top:1px solid var(--line)}
+  .composer textarea{flex:1;resize:none;border:1px solid var(--line2);border-radius:10px;padding:10px 12px;font:inherit;min-height:44px;max-height:160px;background:#fff}
+  .composer button{padding:0 18px;border:0;border-radius:10px;background:var(--accent);color:#fff;font-weight:700;cursor:pointer}
+  .composer button:disabled{opacity:.5;cursor:default}
+
+  /* ---- stat row ---- */
+  .statrow{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 16px;min-width:96px}
+  .stat .n{font-size:22px;font-weight:800;line-height:1.1}
+  .stat .l{color:var(--mut);font-size:11.5px;text-transform:uppercase;letter-spacing:.04em}
+
+  /* ---- board ---- */
+  .cols{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .col h3{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin:0 0 10px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:9px}
+  .card .lbl{font-weight:600;margin-bottom:4px}
+  .card .tags{display:flex;gap:6px;flex-wrap:wrap}
+  .pill{font-size:10.5px;padding:1px 7px;border-radius:7px;background:var(--panel3);color:var(--mut)}
+  .pill.appr{background:#fdeede;color:var(--warn)}
+
+  /* ---- team ---- */
+  .wgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+  .worker{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 15px}
+  .worker .top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .worker .nm{font-weight:700}
+  .worker .role{color:var(--mut);font-size:12.5px;margin-top:2px}
+  .worker .caps{margin-top:8px;font-size:12px;color:var(--fg)}
+  .worker .chan{margin-top:4px;font-size:11.5px;color:var(--mut)}
+  .live{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--mut)}
+  .live .d{width:8px;height:8px;border-radius:50%;background:#c3ccc8}
+  .live.on .d{background:var(--accent)}
+
+  /* ---- graphify ---- */
+  #fgwrap{flex:1;min-height:0;position:relative;border:1px solid var(--line);border-radius:12px;background:#fbfdfc;overflow:hidden}
+  #fg{position:absolute;inset:0}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin:10px 2px 0;font-size:12px;color:var(--mut)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend i{width:10px;height:10px;border-radius:50%;display:inline-block}
+
+  /* ---- overview / control ---- */
+  .ovcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:16px}
+  .ovcard h3{margin:0 0 12px;font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut)}
+  .ovrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .svc{display:inline-flex;align-items:center;gap:7px;font-weight:600}
+  .svc .d{width:9px;height:9px;border-radius:50%;background:#c3ccc8}
+  .svc.up .d{background:var(--accent)}
+  .svc.down .d{background:#c76b3a}
+  .hbctl{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:6px}
+  .toggle{position:relative;width:46px;height:26px;border-radius:14px;background:#cdd5d1;cursor:pointer;transition:background .15s;flex:0 0 46px}
+  .toggle.on{background:var(--accent)}
+  .toggle .k{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .15s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+  .toggle.on .k{left:23px}
+  .hbctl input[type=number]{width:76px;padding:7px 9px;border:1px solid var(--line2);border-radius:8px;font:inherit}
+  .hbctl select{padding:7px 10px;border:1px solid var(--line2);border-radius:8px;font:inherit;background:#fff;cursor:pointer}
+  .hbctl label{color:var(--mut);font-size:12.5px}
+  .btn{padding:8px 16px;border:0;border-radius:9px;background:var(--accent);color:#fff;font-weight:700;cursor:pointer}
+  .btn:disabled{opacity:.5;cursor:default}
+  .btn.ghost{background:var(--panel3);color:var(--fg)}
+  .note{color:var(--mut);font-size:12px;margin-top:8px}
+  .note.warn{color:var(--warn)}
+  .doing{display:flex;flex-direction:column;gap:8px}
+  .doing .item{display:flex;gap:9px;align-items:baseline;padding:8px 11px;background:var(--panel2);border-radius:8px}
+  .doing .item .t{font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em;flex:0 0 66px}
+  .doing .item .when{margin-left:auto;font-size:11px;color:var(--mut);white-space:nowrap}
+
+  /* ---- cloud settings/monitoring (CONTEXT_CLOUD Phase 1, 890a17d8) ---- */
+  .cloudgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:8px}
+  .ck{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--panel2);padding:7px 10px;border-radius:8px;font-size:12.5px}
+  .ck-k{color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ck-ov .ck-k{color:var(--fg);font-weight:600}
+  .ck-v{width:150px;padding:5px 8px;border:1px solid var(--line2);border-radius:7px;font:inherit;font-size:12.5px;text-align:right;background:#fff}
+  .empty{color:var(--mut);padding:30px 4px;text-align:center}
+  .err{color:#b3402a;background:#fbe9e5;border:1px solid #f0cdc4;padding:8px 12px;border-radius:9px}
+
+  /* ---- terminal (web PTY, xterm.js vendored locally — QoL R4/T2) ---- */
+  .termbar{display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+  .termstat{display:inline-flex;align-items:center;gap:7px;font-weight:600;font-size:12.5px}
+  .termstat .d{width:9px;height:9px;border-radius:50%;background:#c3ccc8;transition:background .15s}
+  .termstat.on .d{background:var(--accent)}
+  .termstat.off .d{background:#c76b3a}
+  .termstat.wait .d{background:var(--tag)}
+  .termhint{color:var(--mut);font-size:12px;margin-left:auto}
+  #termwrap{flex:1;min-height:0;border:1px solid var(--line);border-radius:12px;
+            background:#0b0f0d;padding:8px 10px;overflow:hidden}
+  #term{width:100%;height:100%}
+
+  /* ---- +loop split view (QoL R5 / C2): config editor + seeded creator ---- */
+  .nlsplit{display:grid;grid-template-columns:1fr 1fr;gap:14px;flex:1;min-height:0}
+  .nlpane{display:flex;flex-direction:column;min-height:0;border:1px solid var(--line);
+          border-radius:12px;background:var(--panel);overflow:hidden}
+  .nlhd{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .nlhd .t{font-weight:700;font-size:13px}
+  .nlhd select{padding:6px 9px;border:1px solid var(--line2);border-radius:8px;font:inherit;font-size:12px;background:#fff;cursor:pointer}
+  #nlEditor{flex:1;min-height:0;resize:none;border:0;padding:12px 14px;background:#0b0f0d;color:#e6ede9;
+            font-family:ui-monospace,"JetBrains Mono","SF Mono",Menlo,Consolas,monospace;font-size:12.5px;line-height:1.5}
+  #nlEditor:focus{outline:none}
+  .nlmsg{padding:8px 12px;font-size:12px;border-top:1px solid var(--line);white-space:pre-wrap;max-height:150px;overflow:auto}
+  .nlmsg.ok{color:#1f7a4d;background:#eef8f1}
+  .nlmsg.bad{color:#b3402a;background:#fbe9e5}
+  .nlmsg.info{color:var(--mut)}
+  .nlbar{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--line);flex-wrap:wrap}
+  .btn.sm{padding:6px 12px;font-size:12px}
+  #nltermwrap{flex:1;min-height:0;background:#0b0f0d;padding:8px 10px;overflow:hidden}
+  #nlterm{width:100%;height:100%}
+
+  /* ── M1 (QoL R6): responsive / mobile ──────────────────────────────────────
+     Desktop untouched above 760px. Below it the fixed 238px sidebar becomes an
+     off-canvas drawer (hamburger + scrim), the +loop split stacks vertically,
+     the board collapses to one column, and wide content scrolls in its own box
+     so the page never scrolls sideways. Toggle + scrim are display:none until
+     the query switches them on. */
+  .navtoggle{display:none;flex:none;width:40px;height:40px;padding:0;border-radius:10px;
+    border:1px solid var(--line2);background:var(--panel);color:var(--fg);cursor:pointer;
+    align-items:center;justify-content:center;font-size:20px;line-height:1}
+  .navtoggle:hover{border-color:var(--mut)}
+  .navtoggle:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .navscrim{display:none;position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.42);
+    opacity:0;transition:opacity .2s ease}
+  @media (max-width:760px){
+    .side{position:fixed;top:0;left:0;bottom:0;z-index:70;width:80vw;max-width:290px;
+      transform:translateX(-100%);transition:transform .22s cubic-bezier(.2,.7,.3,1);
+      box-shadow:0 0 46px -8px rgba(0,0,0,.5);will-change:transform}
+    body.nav-open .side{transform:none}
+    .navscrim{display:block;visibility:hidden}
+    body.nav-open .navscrim{visibility:visible;opacity:1}
+    .navtoggle{display:inline-flex}
+    .head{padding:12px 14px;gap:12px}
+    .crumb{min-width:0;overflow:hidden}
+    .crumb .title{font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .body{padding:14px;overflow-x:hidden}
+    .cols{grid-template-columns:1fr}          /* board: 3-col → 1-col */
+    .nlsplit{display:block;overflow-y:auto}    /* +loop: side-by-side → stacked */
+    .nlpane{min-height:320px;margin-bottom:14px}
+    .nlpane:last-child{margin-bottom:0}
+    .msg{max-width:88%}
+    .page{padding:11px 12px}                   /* ≥40px-tall nav tap targets */
+    .composer button,.btn{min-height:40px}
+    /* wide content scrolls inside its own container — never the page */
+    .body table{display:block;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .body pre{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  }
+</style>
+<link rel="stylesheet" href="/static/vendor/xterm/xterm.css">
+</head>
+<body>
+  <aside class="side" id="sideNav">
+    <div class="wsswitch">
+      <div class="ava" id="wsAva">S</div>
+      <div class="lbl"><div class="nm" id="wsName">—</div><div class="mut">Switch workspace</div></div>
+      <div class="chev">▾</div>
+      <select id="wsSelect" aria-label="Switch workspace"></select>
+    </div>
+    <div class="sep"></div>
+    <div class="seclabel">Pages</div>
+    <nav id="pages"></nav>
+    <div class="foot">dashboard · <a href="/__gate/logout">log out</a></div>
+  </aside>
+
+  <section class="main">
+    <header class="head">
+      <button class="navtoggle" onclick="toggleNav()" aria-label="Open navigation menu"
+        aria-expanded="false" aria-controls="sideNav">☰</button>
+      <div class="crumb">
+        <div class="title" id="wsTitle">—</div>
+        <div class="sub" id="wsSub"></div>
+      </div>
+    </header>
+    <div class="body">
+      <div class="pane overview active" data-pane="overview"><div id="ovBody"></div></div>
+      <div class="pane chat" data-pane="chat">
+        <!-- assistant-ui Chat client (Vite bundle served by the gate at /chat/). Real
+             coordinator replies via the DB-poll adapter + seeded history; the ?project
+             query pins it to the active workspace. SSE streaming replaces the poll
+             adapter in a later step (ac1c5a6c). -->
+        <iframe id="chatFrame" title="Chat" src="about:blank"
+                style="border:0;width:100%;flex:1;min-height:0"></iframe>
+      </div>
+      <div class="pane" data-pane="board"><div id="board"></div></div>
+      <div class="pane" data-pane="team"><div id="team"></div></div>
+      <div class="pane cloud" data-pane="cloud"><div id="cloudBody"></div></div>
+      <div class="pane graphify" data-pane="graphify">
+        <div id="gstats" class="statrow"></div>
+        <div id="fgwrap"><div id="fg"></div></div>
+        <div class="legend">
+          <span><i style="background:var(--artifact)"></i>artifact</span>
+          <span><i style="background:var(--tag)"></i>tag</span>
+          <span><i style="background:var(--task)"></i>task</span>
+          <span><i style="background:var(--entity)"></i>other</span>
+        </div>
+      </div>
+      <div class="pane terminal" data-pane="terminal">
+        <!-- Web Terminal (QoL R4): a live shell on THIS box (local origin) over a
+             gate-authed PTY-over-WebSocket (docs/TERMINAL.md). xterm.js is vendored
+             same-origin under /static/vendor/xterm — no CDN. -->
+        <div class="termbar">
+          <span class="termstat off" id="termStat"><span class="d"></span><span id="termStatTxt">Disconnected</span></span>
+          <button class="btn ghost" id="termReconnect" style="display:none">Reconnect</button>
+          <span class="termhint">Local origin · a shell on this box · closing this page ends the session</span>
+        </div>
+        <div id="termwrap"><div id="term"></div></div>
+      </div>
+      <div class="pane newloop" data-pane="newloop">
+        <!-- + Loop (QoL R5 / C2): LEFT a loop-config editor (validate against the
+             REAL schema + save via loop_save); RIGHT the Phase-2a web terminal
+             running an interactive loop-creator seeded with the C1 context. -->
+        <div class="nlsplit">
+          <div class="nlpane">
+            <div class="nlhd">
+              <span class="t">Loop config</span>
+              <span style="margin-left:auto"></span>
+              <label class="termhint" style="margin:0">Origin</label>
+              <select id="nlOrigin" aria-label="Origin"><option value="local">local · this box</option></select>
+            </div>
+            <textarea id="nlEditor" spellcheck="false" aria-label="Loop config editor"
+                      placeholder="Converse with the creator on the right. When it emits a ```json config, click “◀ Apply from terminal”, then Validate + Save. You can also paste or hand-edit config JSON here."></textarea>
+            <div class="nlmsg info" id="nlMsg">Loading the creator…</div>
+            <div class="nlbar">
+              <button class="btn sm ghost" id="nlApply">◀ Apply from terminal</button>
+              <button class="btn sm ghost" id="nlValidate">Validate</button>
+              <button class="btn sm" id="nlSave" disabled>Save</button>
+            </div>
+          </div>
+          <div class="nlpane">
+            <div class="nlhd">
+              <span class="t">Creator</span>
+              <span class="termstat off" id="nlTermStat"><span class="d"></span><span id="nlTermStatTxt">Disconnected</span></span>
+              <span style="margin-left:auto"></span>
+              <select id="nlRuntime" aria-label="Creator runtime"><option value="claude">claude</option><option value="codex">codex</option><option value="cursor">cursor</option></select>
+              <button class="btn sm ghost" id="nlTermReconnect" style="display:none">Reconnect</button>
+            </div>
+            <div id="nltermwrap"><div id="nlterm"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- M1: dimming backdrop for the mobile sidebar drawer (tap to close). -->
+  <div class="navscrim" onclick="closeNav()" aria-hidden="true"></div>
+
+<script>
+const PROJECTS = [
+  {slug:"swarmdev",   name:"swarmdev",            color:"#2f9e77"},
+  {slug:"vellum",     name:"Vellum",              color:"#8a7bd8"},
+  {slug:"umem",       name:"universalLLMmemory",  color:"#4a7fd0"},
+  {slug:"plancheck",  name:"PlanCheck",           color:"#c76b3a"},
+  {slug:"computation",name:"computation",         color:"#3aa5b0"},
+];
+const PAGES = [
+  {id:"overview", name:"Overview", ic:"◈"},
+  {id:"chat",     name:"Chat",     ic:"✉"},
+  {id:"board",    name:"Board",    ic:"▤"},
+  {id:"team",     name:"Team",     ic:"◎"},
+  {id:"graphify", name:"Graphify", ic:"⚡"},
+  {id:"cloud",    name:"Cloud",    ic:"☁"},
+  {id:"terminal", name:"Terminal", ic:"▸"},
+  {id:"newloop",  name:"+ Loop",   ic:"＋"},
+];
+let active = PROJECTS[0].slug;
+let page = "overview";
+let fg = null;
+
+function esc(s){return (s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+async function api(path, opts){
+  const r = await fetch(path, Object.assign({credentials:"same-origin"}, opts||{}));
+  if(r.status===401 || r.status===302){ location.href="/__gate/login"; throw new Error("auth"); }
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  return r.json();
+}
+
+/* ---------- workspace switcher (top-left sidebar) ---------- */
+function renderSelect(){
+  const s = document.getElementById("wsSelect");
+  s.innerHTML = PROJECTS.map(p=>`<option value="${p.slug}"${p.slug===active?' selected':''}>${esc(p.name)}</option>`).join("");
+  s.onchange = ()=>selectProject(s.value);
+}
+let chatThread = null;   // active chat thread id (the /w/<slug>/chat/<id> segment)
+function urlFor(slug, pg){
+  let u = "/w/"+encodeURIComponent(slug)+"/"+encodeURIComponent(pg);
+  if(pg === "chat" && chatThread != null) u += "/"+chatThread;
+  return u;
+}
+function parsePath(){
+  const m = location.pathname.match(/^\/w\/([a-z0-9_-]+)(?:\/([a-z0-9_-]+))?(?:\/(\d+))?$/);
+  const slug = m && PROJECTS.some(p=>p.slug===m[1]) ? m[1] : PROJECTS[0].slug;
+  const pg = m && m[2] && PAGES.some(p=>p.id===m[2]) ? m[2] : PAGES[0].id;
+  const sub = (m && m[3] && pg === "chat") ? Number(m[3]) : null;
+  return {slug, pg, sub};
+}
+// The chat iframe reports its active thread; the SHELL owns the URL.
+window.addEventListener("message", (e)=>{
+  if(e.origin !== location.origin) return;
+  const d = e.data;
+  if(!d || d.swarmChat !== "thread" || typeof d.id !== "number") return;
+  const hadThread = chatThread != null;
+  chatThread = d.id;
+  // keep the iframe's canonical src in sync so startChat never re-loads it
+  const fr = document.getElementById("chatFrame");
+  if(fr) fr.dataset.src = chatSrc();
+  if(page === "chat" && location.pathname !== urlFor(active, "chat")){
+    const st = {slug: active, pg: "chat", thread: d.id};
+    if(hadThread) history.pushState(st, "", urlFor(active, "chat"));
+    else history.replaceState(st, "", urlFor(active, "chat"));  // first report
+  }
+});
+function selectProject(slug, push=true){
+  if(slug !== active) chatThread = null;   // thread ids are per-project
+  active = slug;
+  const p = PROJECTS.find(x=>x.slug===slug);
+  const ava = document.getElementById("wsAva");
+  ava.textContent = p.name.charAt(0).toUpperCase();
+  ava.style.background = p.color || "var(--accent)";
+  document.getElementById("wsName").textContent = p.name;
+  document.getElementById("wsSelect").value = slug;
+  openPage(page, push);
+}
+
+/* ---------- left sidebar = pages ---------- */
+function renderPages(){
+  document.getElementById("pages").innerHTML = PAGES.map(p=>
+    `<div class="page${p.id===page?' active':''}" data-page="${p.id}"><span class="ic">${p.ic}</span>${esc(p.name)}</div>`).join("");
+  document.querySelectorAll(".page").forEach(el=>el.onclick=()=>openPage(el.dataset.page));
+}
+function openPage(name, push=true){
+  page = name;
+  if(push && location.pathname !== urlFor(active, name)){
+    history.pushState({slug: active, pg: name}, "", urlFor(active, name));
+  }
+  const pg = PAGES.find(x=>x.id===name) || PAGES[0];
+  const p = PROJECTS.find(x=>x.slug===active);
+  document.getElementById("wsTitle").innerHTML = `<span class="pgic">${pg.ic}</span>${esc(pg.name)}`;
+  document.getElementById("wsSub").textContent = (p?p.name:active)+" · project: "+active;
+  document.querySelectorAll(".page").forEach(t=>t.classList.toggle("active", t.dataset.page===name));
+  document.querySelectorAll(".pane").forEach(p=>p.classList.toggle("active", p.dataset.pane===name));
+  stopChatTimer();
+  stopTerminal();   // leaving any page tears the terminal WS + PTY down (see startTerminal)
+  stopNewLoop();    // …and the +loop creator terminal + its PTY
+  if(name==="overview") loadOverview();
+  if(name==="chat") startChat();
+  if(name==="board") loadBoard();
+  if(name==="team") loadTeam();
+  if(name==="graphify") loadGraph();
+  if(name==="cloud") loadCloud();
+  if(name==="terminal") startTerminal();
+  if(name==="newloop") startNewLoop();
+}
+
+/* ---------- overview (control + stats + activity) ---------- */
+function fmtWhen(ts){
+  if(!ts) return "—";
+  const d = new Date(ts*1000), now = Date.now()/1000, diff = now-ts;
+  if(diff<60) return "just now";
+  if(diff<3600) return Math.floor(diff/60)+"m ago";
+  if(diff<86400) return Math.floor(diff/3600)+"h ago";
+  return d.toLocaleDateString([], {month:"short",day:"numeric"});
+}
+function projName(slug){ const p=PROJECTS.find(x=>x.slug===slug); return p?p.name:slug; }
+async function loadOverview(){
+  const el = document.getElementById("ovBody");
+  el.innerHTML = '<div class="empty">Loading…</div>';
+  let d; try{ d = await api(`/api/project/${active}/status`); }
+  catch(e){ el.innerHTML=`<div class="err">Status unavailable: ${esc(e.message)}</div>`; return; }
+  if(active!== (d.project||active)) return;
+  renderOverview(d);
+}
+function renderOverview(d){
+  const el = document.getElementById("ovBody");
+  const s = d.stats||{};
+  const t = s.tasks||{};
+  // --- control card ---
+  let ctl = '<div class="ovcard"><h3>Coordinator &amp; heartbeat</h3>';
+  if(!d.service){
+    ctl += `<div class="note">No coordinator service is mapped for this workspace${d.note?' — '+esc(d.note):''}. Nothing to drive here.</div>`;
+  } else {
+    const up = d.service.active==="active";
+    ctl += `<div class="ovrow">
+      <span class="svc ${up?'up':'down'}"><span class="d"></span>${esc(d.service.unit)}</span>
+      <span class="pill">${esc(d.service.active)}</span>
+      <span class="pill">${esc(d.service.enabled)}</span></div>`;
+    const hb = d.heartbeat||{};
+    const on = !!hb.enabled;
+    const mins = hb.interval ? Math.round(hb.interval/60) : 60;
+    ctl += `<div class="hbctl">
+      <div class="toggle ${on?'on':''}" id="hbToggle"><span class="k"></span></div>
+      <span id="hbLabel">${on?'Heartbeat ON':'Heartbeat OFF'}</span>
+      <label>every</label>
+      <input type="number" id="hbMins" min="1" step="1" value="${mins}" ${on?'':'disabled'}>
+      <label>min</label>
+      <button class="btn" id="hbApply">Apply</button>
+    </div>`;
+    if(hb.pending_restart) ctl += `<div class="note warn">Config changed but the running process is still on ${hb.running_interval}s — restart pending.</div>`;
+    // --- model row ---
+    const md = d.model||{};
+    const choices = md.choices||[];
+    ctl += `<div class="hbctl" style="margin-top:14px">
+      <label>Model</label>
+      <select id="mdSelect">${choices.map(m=>`<option value="${esc(m)}"${m===md.model?' selected':''}>${esc(m)}</option>`).join('')}</select>
+      <button class="btn ghost" id="mdApply">Set model</button>
+    </div>`;
+    if(md.pending_restart) ctl += `<div class="note warn">Model set to ${esc(md.model)} but the running process is still on ${esc(md.running_model)} — restart pending.</div>`;
+    // --- effort row (1a4ced4f): SWARM_CLAUDE_EFFORT -> claude --effort; "default" = no override ---
+    const ef = d.effort||{};
+    const efChoices = ef.choices||[];
+    if(efChoices.length){
+      ctl += `<div class="hbctl" style="margin-top:14px">
+        <label>Effort</label>
+        <select id="efSelect">${efChoices.map(c=>`<option value="${esc(c)}"${c===ef.effort?' selected':''}>${esc(c)}</option>`).join('')}</select>
+        <button class="btn ghost" id="efApply">Set effort</button>
+      </div>`;
+      if(ef.pending_restart) ctl += `<div class="note warn">Effort set to ${esc(ef.effort)} but the running process is still on ${esc(ef.running_effort)} — restart pending.</div>`;
+    }
+    ctl += `<div class="note">Applying any control restarts the ${esc(projName(active))} coordinator to pick up the change.</div>`;
+  }
+  ctl += '</div>';
+  // --- stats ---
+  let statHtml = '';
+  if(s.core_db===false){
+    statHtml = '<div class="ovcard"><div class="empty">core.db not found.</div></div>';
+  } else if(s.tagged===false){
+    statHtml = '<div class="ovcard"><div class="note">No items tagged project:'+esc(active)+' yet — no stats to show.</div></div>';
+  } else {
+    statHtml = `<div class="statrow">
+      <div class="stat"><div class="n">${t.backlog||0}</div><div class="l">Backlog</div></div>
+      <div class="stat"><div class="n">${t.in_progress||0}</div><div class="l">In progress</div></div>
+      <div class="stat"><div class="n">${t.done||0}</div><div class="l">Done</div></div>
+      <div class="stat"><div class="n">${t.archived||0}</div><div class="l">Archived</div></div>
+      <div class="stat"><div class="n">${s.artifacts||0}</div><div class="l">Artifacts</div></div>
+      <div class="stat"><div class="n">${fmtWhen(s.last_activity)}</div><div class="l">Last active</div></div>
+    </div>`;
+  }
+  // --- doing now ---
+  let doing = '<div class="ovcard"><h3>What it\'s doing now</h3>';
+  const ip = s.in_progress||[];
+  if(ip.length){
+    doing += '<div class="doing">'+ip.map(l=>`<div class="item"><span class="t">active</span><span>${esc(l)}</span></div>`).join('')+'</div>';
+  } else {
+    doing += '<div class="note">Nothing in progress right now (no in_progress tasks for this workspace).</div>';
+  }
+  const rec = s.recent||[];
+  if(rec.length){
+    doing += '<h3 style="margin-top:16px">Recent activity</h3><div class="doing">'+
+      rec.map(r=>`<div class="item"><span class="t">${esc(r.type)}</span><span>${esc(r.label||"(untitled)")}</span><span class="when">${fmtWhen(r.ts)}</span></div>`).join('')+'</div>';
+  }
+  doing += '</div>';
+  el.innerHTML = ctl + statHtml + doing;
+  // wire controls
+  if(d.service){
+    const tg = document.getElementById("hbToggle");
+    const mi = document.getElementById("hbMins");
+    const lb = document.getElementById("hbLabel");
+    tg.onclick = ()=>{ const on=!tg.classList.contains("on"); tg.classList.toggle("on",on);
+      lb.textContent = on?'Heartbeat ON':'Heartbeat OFF'; mi.disabled=!on; };
+    document.getElementById("hbApply").onclick = ()=>applyHeartbeat(d.service.unit);
+    const mda = document.getElementById("mdApply");
+    if(mda) mda.onclick = ()=>applyModel(d.service.unit);
+    const efa = document.getElementById("efApply");
+    if(efa) efa.onclick = ()=>applyEffort(d.service.unit);
+  }
+}
+async function applyModel(unit){
+  const model = document.getElementById("mdSelect").value;
+  if(!confirm(`Set ${unit} to ${model}? This restarts the coordinator to apply.`)) return;
+  const btn = document.getElementById("mdApply"); btn.disabled=true; btn.textContent="Setting…";
+  try{
+    await api(`/api/project/${active}/model`, {method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model})});
+    setTimeout(loadOverview, 1500);
+  }catch(e){ alert("Failed: "+e.message); btn.disabled=false; btn.textContent="Set model"; }
+}
+async function applyEffort(unit){
+  const effort = document.getElementById("efSelect").value;
+  if(!confirm(`Set ${unit} effort to ${effort}? This restarts the coordinator to apply.`)) return;
+  const btn = document.getElementById("efApply"); btn.disabled=true; btn.textContent="Setting…";
+  try{
+    await api(`/api/project/${active}/effort`, {method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({effort})});
+    setTimeout(loadOverview, 1500);
+  }catch(e){ alert("Failed: "+e.message); btn.disabled=false; btn.textContent="Set effort"; }
+}
+async function applyHeartbeat(unit){
+  const on = document.getElementById("hbToggle").classList.contains("on");
+  const mins = parseInt(document.getElementById("hbMins").value,10)||60;
+  const interval = Math.max(60, mins*60);
+  if(!confirm(`This will restart ${unit} to apply the heartbeat change. Continue?`)) return;
+  const btn = document.getElementById("hbApply"); btn.disabled=true; btn.textContent="Applying…";
+  try{
+    await api(`/api/project/${active}/heartbeat`, {method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({enabled:on, interval})});
+    setTimeout(loadOverview, 1500);
+  }catch(e){ alert("Failed: "+e.message); btn.disabled=false; btn.textContent="Apply"; }
+}
+
+/* ---------- chat ----------
+   The Chat pane is now the assistant-ui client bundle served by the gate at /chat/
+   (real coordinator replies via its own DB-poll adapter + seeded history). We just
+   point the iframe at the active project and only reload when the slug changes, so
+   switching pages back to Chat does not blow away an in-flight conversation. */
+function chatSrc(){
+  // theme=light: the dashboard is light-only (Tim: chat totally broken,
+  // 2026-08-09). Standalone /chat/ stays OS-adaptive.
+  let u = "/chat/?project="+encodeURIComponent(active)+"&theme=light";
+  if(chatThread != null) u += "&thread="+chatThread;
+  return u;
+}
+function startChat(){
+  const fr = document.getElementById("chatFrame");
+  if(!fr) return;
+  const want = chatSrc();
+  // dataset.src is the canonical loaded state — an in-iframe thread switch
+  // updates it via the message handler above, so we reload ONLY when a
+  // deep-link/popstate/workspace-switch actually changed the target.
+  if(fr.dataset.src !== want){ fr.src = want; fr.dataset.src = want; }
+}
+function stopChatTimer(){ /* no timers now — the /chat/ client owns its own polling */ }
+
+/* ---------- board ---------- */
+function cardMatches(card, slug){
+  if(card.project!=null) return card.project===slug;
+  if(Array.isArray(card.tags)) return card.tags.some(t=>t==="project:"+slug || t===slug);
+  return null;
+}
+function cardHtml(c){
+  const appr = c.approval==="needed" ? '<span class="pill appr">approval needed</span>' : "";
+  const asg = c.assignee ? `<span class="pill">${esc(c.assignee)}</span>` : "";
+  const pri = c.priority ? `<span class="pill">${esc(c.priority)}</span>` : "";
+  return `<div class="card"><div class="lbl">${esc(c.label||c.title||"(untitled)")}</div><div class="tags">${pri}${asg}${appr}</div></div>`;
+}
+async function loadBoard(){
+  const el = document.getElementById("board");
+  el.innerHTML = '<div class="empty">Loading board…</div>';
+  let d; try{ d = await api("/api/core/board"); }catch(e){ el.innerHTML=`<div class="err">Board unavailable: ${esc(e.message)}</div>`; return; }
+  if(!d.core_db){ el.innerHTML='<div class="empty">No core DB.</div>'; return; }
+  const cols = d.columns||{};
+  const all = (cols.backlog||[]).concat(cols.in_progress||[],cols.done||[]);
+  const canFilter = all[0] ? (cardMatches(all[0], active)!==null) : true;
+  const order = [["backlog","Backlog"],["in_progress","In progress"],["done","Done"]];
+  let counts = {backlog:0,in_progress:0,done:0};
+  let html = "";
+  if(!canFilter) html += '<div class="banner" style="margin-bottom:14px">Whole board — task cards have no per-project field yet (v2).</div>';
+  let colsHtml = '<div class="cols">';
+  for(const [k,title] of order){
+    let cards = cols[k]||[]; if(canFilter) cards = cards.filter(c=>cardMatches(c,active)===true);
+    counts[k]=cards.length;
+    colsHtml += `<div class="col"><h3>${title} · ${cards.length}</h3>`+
+      (cards.length?cards.map(cardHtml).join(""):'<div class="empty" style="padding:14px">—</div>')+`</div>`;
+  }
+  colsHtml += "</div>";
+  html += `<div class="statrow">
+    <div class="stat"><div class="n">${counts.backlog}</div><div class="l">Backlog</div></div>
+    <div class="stat"><div class="n">${counts.in_progress}</div><div class="l">In progress</div></div>
+    <div class="stat"><div class="n">${counts.done}</div><div class="l">Done</div></div>
+    <div class="stat"><div class="n">${(d.needs_approval||[]).length}</div><div class="l">Awaiting Tim</div></div>
+  </div>` + colsHtml;
+  el.innerHTML = html;
+}
+
+/* ---------- team ---------- */
+async function loadTeam(){
+  const el = document.getElementById("team");
+  el.innerHTML = '<div class="empty">Loading team…</div>';
+  let d; try{ d = await api("/api/core/workers"); }catch(e){ el.innerHTML=`<div class="err">Team unavailable: ${esc(e.message)}</div>`; return; }
+  if(!d.core_db){ el.innerHTML='<div class="empty">No core DB.</div>'; return; }
+  const ws = d.workers||[];
+  if(!ws.length){ el.innerHTML='<div class="empty">No team members recorded.</div>'; return; }
+  const on = ws.filter(w=>w.active).length;
+  const coords = ws.filter(w=>(w.role||"").indexOf("coord")>=0 || (w.kind||"")==="agent").length;
+  const stats = `<div class="statrow">
+    <div class="stat"><div class="n">${ws.length}</div><div class="l">Members</div></div>
+    <div class="stat"><div class="n">${on}</div><div class="l">Active</div></div>
+    <div class="stat"><div class="n">${coords}</div><div class="l">Agents</div></div>
+  </div>`;
+  const cards = ws.map(w=>{
+    const caps = w.capabilities ? `<div class="caps">${esc(w.capabilities)}</div>` : "";
+    const chan = w.channel ? `<div class="chan">via ${esc(w.channel)}</div>` : "";
+    return `<div class="worker">
+      <div class="top"><span class="nm">${esc(w.name||w.id||"worker")}</span>
+        <span class="live ${w.active?'on':''}"><span class="d"></span>${w.active?'active':'idle'}</span></div>
+      <div class="role">${esc(w.role||"member")} · ${esc(w.kind||"human")}</div>${caps}${chan}</div>`;
+  }).join("");
+  el.innerHTML = stats + '<div class="wgrid">'+cards+'</div>';
+}
+
+/* ---------- graphify (interactive force graph, per-project) ---------- */
+function loadFGLib(){
+  return new Promise((res,rej)=>{
+    if(window.ForceGraph) return res();
+    const s=document.createElement("script");
+    s.src="https://unpkg.com/force-graph"; s.onload=()=>res(); s.onerror=()=>rej(new Error("viz lib failed to load"));
+    document.head.appendChild(s);
+  });
+}
+const NODE_COLOR = t => t==="artifact"?getVar("--artifact"):t==="tag"?getVar("--tag"):t==="task"?getVar("--task"):getVar("--entity");
+function getVar(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()||"#888";}
+async function loadGraph(){
+  const stats = document.getElementById("gstats");
+  const wrap = document.getElementById("fgwrap");
+  stats.innerHTML="";
+  const holder = document.getElementById("fg"); holder.innerHTML='<div class="empty">Loading graph…</div>';
+  let d;
+  try{ d = await api(`/api/core/graph?tag=project:${active}`); }
+  catch(e){ holder.innerHTML=`<div class="err" style="margin:12px">Graph unavailable: ${esc(e.message)}</div>`; return; }
+  const nodes = (d.nodes||[]).map(n=>Object.assign({},n));
+  const links = (d.links||[]).map(l=>Object.assign({},l));
+  const byType = {}; nodes.forEach(n=>byType[n.type]=(byType[n.type]||0)+1);
+  stats.innerHTML = `
+    <div class="stat"><div class="n">${nodes.length}</div><div class="l">Nodes</div></div>
+    <div class="stat"><div class="n">${links.length}</div><div class="l">Edges</div></div>
+    <div class="stat"><div class="n">${byType.artifact||0}</div><div class="l">Artifacts</div></div>
+    <div class="stat"><div class="n">${byType.tag||0}</div><div class="l">Tags</div></div>
+    ${d.truncated?'<div class="stat"><div class="n">!</div><div class="l">Truncated</div></div>':''}`;
+  if(!nodes.length){ holder.innerHTML='<div class="empty">No graph data tagged project:'+esc(active)+' yet.</div>'; return; }
+  try{ await loadFGLib(); }
+  catch(e){ holder.innerHTML=`<div class="err" style="margin:12px">${esc(e.message)}</div>`; return; }
+  holder.innerHTML="";
+  fg = ForceGraph()(holder)
+    .width(wrap.clientWidth).height(wrap.clientHeight)
+    .graphData({nodes, links})
+    .nodeId("id")
+    .nodeLabel(n=>`${n.type}: ${n.label||n.id}`)
+    .nodeColor(n=>NODE_COLOR(n.type))
+    .nodeRelSize(5)
+    .linkColor(()=> "#d3dbd8")
+    .linkDirectionalArrowLength(3).linkDirectionalArrowRelPos(1)
+    .backgroundColor("#fbfdfc");
+  window.onresize = ()=>{ if(fg){ fg.width(wrap.clientWidth).height(wrap.clientHeight); } };
+}
+
+/* ---------- terminal (web PTY over WebSocket; xterm.js vendored locally) ----------
+   Wire contract with the T1 backend (authoritative in docs/TERMINAL.md):
+     endpoint         ws(s)://<host>/ws/terminal   (LOCAL origin this round)
+     auth             the SAME dash_sess cookie the browser sends on the WS
+                      handshake — an unauthed/bad-cookie handshake is REFUSED by
+                      the gate (never a gate-exempt route). No token in JS.
+     client -> server BINARY frame = raw stdin bytes (keystrokes)
+                      TEXT   frame = JSON control, {"type":"resize","cols":C,"rows":R}
+     server -> client BINARY frame = raw stdout bytes (-> term.write)
+                      TEXT   frame = JSON status, {"type":"exit","code":N} /
+                                     {"type":"error","message":"…"}
+   Leaving the Terminal page (or closing the tab) closes the socket, which is the
+   T1 backend's signal to tear down the PTY + child — no orphaned shells. */
+const TERM_ENC = new TextEncoder();
+let term=null, termFit=null, termWS=null, termLibP=null, termRO=null;
+
+function loadTermLib(){
+  if(termLibP) return termLibP;
+  termLibP = new Promise((res,rej)=>{
+    if(window.Terminal && window.FitAddon){ res(); return; }
+    let loaded=0; const need=2;
+    const done=()=>{ if(++loaded>=need) res(); };
+    const add=(src)=>{ const s=document.createElement("script"); s.src=src;
+      s.onload=done; s.onerror=()=>rej(new Error("terminal library failed to load"));
+      document.head.appendChild(s); };
+    // same-origin, CSP-safe (no CDN). Both UMD; load order is independent.
+    add("/static/vendor/xterm/xterm.js");
+    add("/static/vendor/xterm/addon-fit.js");
+  });
+  return termLibP;
+}
+function setTermStat(state, txt){
+  const el=document.getElementById("termStat"); if(!el) return;
+  el.classList.remove("on","off","wait"); el.classList.add(state);
+  document.getElementById("termStatTxt").textContent = txt;
+  const rc=document.getElementById("termReconnect");
+  if(rc) rc.style.display = (state==="off") ? "" : "none";
+}
+function fitTerm(){
+  if(!term || !termFit) return;
+  try{ termFit.fit(); sendTermResize(); }catch(e){}
+}
+function sendTermResize(){
+  if(termWS && termWS.readyState===1 && term){
+    try{ termWS.send(JSON.stringify({type:"resize", cols:term.cols, rows:term.rows})); }catch(e){}
+  }
+}
+async function startTerminal(){
+  const wrap=document.getElementById("termwrap");
+  if(!wrap) return;
+  setTermStat("wait","Connecting…");
+  try{ await loadTermLib(); }
+  catch(e){ setTermStat("off","Terminal library failed to load"); return; }
+  if(page!=="terminal") return;            // navigated away while the lib loaded
+  if(term){ try{term.dispose();}catch(e){} term=null; }
+  const FitAddon = (window.FitAddon && window.FitAddon.FitAddon) || window.FitAddon;
+  term = new window.Terminal({
+    cursorBlink:true, fontSize:13, scrollback:5000,
+    fontFamily:'ui-monospace,"JetBrains Mono","SF Mono",Menlo,Consolas,monospace',
+    theme:{background:"#0b0f0d", foreground:"#e6ede9", cursor:"#46e0a0",
+           selectionBackground:"#2f9e7755"},
+  });
+  termFit = new FitAddon();
+  term.loadAddon(termFit);
+  const host=document.getElementById("term"); host.innerHTML="";
+  term.open(host);
+  // keystrokes -> raw stdin (binary). Bound once; reads the live socket each time
+  // so the Reconnect button can swap termWS underneath without re-binding.
+  term.onData(d=>{ if(termWS && termWS.readyState===1) termWS.send(TERM_ENC.encode(d)); });
+  requestAnimationFrame(fitTerm);          // fit once layout has flushed
+  if(window.ResizeObserver){
+    termRO = new ResizeObserver(()=>fitTerm());
+    termRO.observe(wrap);
+  }
+  const rc=document.getElementById("termReconnect");
+  if(rc) rc.onclick=()=>{ if(!termWS || termWS.readyState>1) connectTermWS(); };
+  connectTermWS();
+}
+function connectTermWS(){
+  const proto = location.protocol==="https:" ? "wss:" : "ws:";
+  let ws;
+  try{ ws = new WebSocket(proto+"//"+location.host+"/ws/terminal"); }
+  catch(e){ setTermStat("off","Disconnected"); return; }
+  ws.binaryType="arraybuffer";
+  termWS = ws;
+  setTermStat("wait","Connecting…");
+  let opened=false;
+  ws.onopen = ()=>{ opened=true; setTermStat("on","Connected"); sendTermResize(); if(term) term.focus(); };
+  ws.onmessage = (ev)=>{
+    if(typeof ev.data === "string"){       // JSON status/control from the server
+      let m; try{ m=JSON.parse(ev.data); }catch(_){ return; }
+      if(m.type==="exit" && term)
+        term.write("\r\n\x1b[90m[session ended"+(m.code!=null?" ("+m.code+")":"")+"]\x1b[0m\r\n");
+      else if(m.type==="error" && term)
+        term.write("\r\n\x1b[31m["+String(m.message||"error")+"]\x1b[0m\r\n");
+      return;
+    }
+    if(term) term.write(new Uint8Array(ev.data));   // raw stdout
+  };
+  ws.onerror = ()=>{ /* onclose follows with the terminal state */ };
+  ws.onclose = ()=>{
+    if(termWS!==ws) return;                // superseded by a reconnect
+    termWS=null;
+    // never-opened close == handshake refused (bad/absent cookie) -> auth hint.
+    setTermStat("off", opened ? "Disconnected" : "Refused — reload to sign in");
+  };
+}
+function stopTerminal(){
+  if(termRO){ try{termRO.disconnect();}catch(e){} termRO=null; }
+  if(termWS){ try{termWS.close();}catch(e){} termWS=null; }   // -> backend tears down the PTY
+  if(term){ try{term.dispose();}catch(e){} term=null; }
+}
+// belt-and-braces: a hard tab close also drops the socket (backend teardown signal)
+window.addEventListener("beforeunload", ()=>{ if(termWS){ try{termWS.close();}catch(e){} } });
+
+/* ---------- + loop (QoL R5 / C2): split view = config editor + seeded creator ----------
+   LEFT  edit loop-config JSON, VALIDATE against the REAL schema/linter
+         (/api/loops/creator/validate) and SAVE via loop_save (/api/loops/save).
+   RIGHT the Phase-2a web terminal, but ?session=creator so the PTY runs the
+         interactive loop-creator (mcp_loops.creator_launch) whose OPENING screen
+         visibly contains the C1 seed context. "Apply from terminal" lifts the
+         creator's emitted ```json block into the editor. Its own WS/PTY instance
+         (nl*) so the Terminal page is untouched; both share loadTermLib(). */
+let nlterm=null, nlfit=null, nlWS=null, nlRO=null, nlBuf="", nlValidConfig=null;
+function setNlStat(state, txt){
+  const el=document.getElementById("nlTermStat"); if(!el) return;
+  el.classList.remove("on","off","wait"); el.classList.add(state);
+  document.getElementById("nlTermStatTxt").textContent = txt;
+  const rc=document.getElementById("nlTermReconnect");
+  if(rc) rc.style.display = (state==="off") ? "" : "none";
+}
+function nlSetMsg(kind, txt){
+  const el=document.getElementById("nlMsg"); if(!el) return;
+  el.className = "nlmsg "+kind; el.textContent = txt;
+}
+function nlFit(){ if(!nlterm||!nlfit) return; try{ nlfit.fit(); nlSendResize(); }catch(e){} }
+function nlSendResize(){
+  if(nlWS && nlWS.readyState===1 && nlterm){
+    try{ nlWS.send(JSON.stringify({type:"resize", cols:nlterm.cols, rows:nlterm.rows})); }catch(e){}
+  }
+}
+async function startNewLoop(){
+  // 1) surface which context the creator is seeded with (transparency for C1)
+  try{
+    const p = await api("/api/loops/creator/prompt");
+    const docs = (p && p.context_docs) || [];
+    nlSetMsg("info", "Creator seeded with context: "+(docs.length?docs.join(", "):"(default preprompt)")+
+             ". Converse on the right; Apply its ```json config into the editor, then Validate + Save.");
+  }catch(e){ nlSetMsg("info","Converse with the creator on the right; Apply its config, then Validate + Save."); }
+  // 2) start the creator terminal (its own instance; reuses the vendored lib)
+  const wrap=document.getElementById("nltermwrap"); if(!wrap) return;
+  setNlStat("wait","Connecting…");
+  try{ await loadTermLib(); }
+  catch(e){ setNlStat("off","Terminal library failed to load"); return; }
+  if(page!=="newloop") return;               // navigated away while the lib loaded
+  if(nlterm){ try{nlterm.dispose();}catch(e){} nlterm=null; }
+  const FitAddon = (window.FitAddon && window.FitAddon.FitAddon) || window.FitAddon;
+  nlterm = new window.Terminal({
+    cursorBlink:true, fontSize:13, scrollback:6000,
+    fontFamily:'ui-monospace,"JetBrains Mono","SF Mono",Menlo,Consolas,monospace',
+    theme:{background:"#0b0f0d", foreground:"#e6ede9", cursor:"#46e0a0", selectionBackground:"#2f9e7755"},
+  });
+  nlfit = new FitAddon(); nlterm.loadAddon(nlfit);
+  const host=document.getElementById("nlterm"); host.innerHTML=""; nlterm.open(host);
+  nlterm.onData(d=>{ if(nlWS && nlWS.readyState===1) nlWS.send(TERM_ENC.encode(d)); });
+  requestAnimationFrame(nlFit);
+  if(window.ResizeObserver){ nlRO=new ResizeObserver(()=>nlFit()); nlRO.observe(wrap); }
+  const rc=document.getElementById("nlTermReconnect");
+  if(rc) rc.onclick=()=>{ if(!nlWS || nlWS.readyState>1) connectNlWS(); };
+  connectNlWS();
+}
+function connectNlWS(){
+  const proto = location.protocol==="https:" ? "wss:" : "ws:";
+  const rt = (document.getElementById("nlRuntime")||{}).value || "claude";
+  nlBuf="";
+  let ws;
+  // creator session on the LOCAL origin — same gate-authed /ws/terminal, no token.
+  try{ ws = new WebSocket(proto+"//"+location.host+"/ws/terminal?session=creator&origin=local&runtime="+encodeURIComponent(rt)); }
+  catch(e){ setNlStat("off","Disconnected"); return; }
+  ws.binaryType="arraybuffer";
+  nlWS = ws; setNlStat("wait","Connecting…");
+  let opened=false;
+  ws.onopen = ()=>{ opened=true; setNlStat("on","Connected"); nlSendResize(); if(nlterm) nlterm.focus(); };
+  ws.onmessage = (ev)=>{
+    if(typeof ev.data === "string"){
+      let m; try{ m=JSON.parse(ev.data); }catch(_){ return; }
+      if(m.type==="exit" && nlterm)
+        nlterm.write("\r\n\x1b[90m[session ended"+(m.code!=null?" ("+m.code+")":"")+"]\x1b[0m\r\n");
+      else if(m.type==="error" && nlterm)
+        nlterm.write("\r\n\x1b[31m["+String(m.message||"error")+"]\x1b[0m\r\n");
+      return;
+    }
+    const u = new Uint8Array(ev.data);
+    if(nlterm) nlterm.write(u);
+    // accumulate decoded stdout so Apply can lift the creator's config block
+    try{ nlBuf += new TextDecoder().decode(u); if(nlBuf.length>200000) nlBuf=nlBuf.slice(-200000); }catch(e){}
+  };
+  ws.onerror = ()=>{};
+  ws.onclose = ()=>{
+    if(nlWS!==ws) return;
+    nlWS=null;
+    setNlStat("off", opened ? "Disconnected" : "Refused — reload to sign in");
+  };
+}
+function stopNewLoop(){
+  if(nlRO){ try{nlRO.disconnect();}catch(e){} nlRO=null; }
+  if(nlWS){ try{nlWS.close();}catch(e){} nlWS=null; }   // -> backend tears down the PTY
+  if(nlterm){ try{nlterm.dispose();}catch(e){} nlterm=null; }
+}
+function nlExtractConfig(text){
+  // the LAST fenced ```json … ``` block that contains an object; else first { … last }.
+  const fence=/```(?:json)?\s*([\s\S]*?)```/gi; let m, last=null;
+  while((m=fence.exec(text))!==null){ if(m[1] && m[1].indexOf("{")!==-1) last=m[1]; }
+  if(last) return last.trim();
+  const a=text.indexOf("{"), b=text.lastIndexOf("}");
+  return (a!==-1 && b>a) ? text.slice(a, b+1) : null;
+}
+function nlApplyFromTerminal(){
+  const cfg = nlExtractConfig(nlBuf);
+  const ed = document.getElementById("nlEditor");
+  if(!cfg){ nlSetMsg("bad","No ```json config block in the creator output yet — let it emit one first."); return; }
+  let out=cfg; try{ out=JSON.stringify(JSON.parse(cfg), null, 2); }catch(e){}
+  ed.value = out; nlValidConfig=null; document.getElementById("nlSave").disabled=true;
+  nlSetMsg("info","Applied the creator's config into the editor. Validate to check it against the real schema.");
+}
+async function nlValidate(){
+  const ed = document.getElementById("nlEditor"); const text=(ed.value||"").trim();
+  if(!text){ nlSetMsg("bad","The editor is empty."); return; }
+  nlSetMsg("info","Validating against the real schema + linter…");
+  let res; try{ res = await api("/api/loops/creator/validate",
+      {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({text})}); }
+  catch(e){ nlSetMsg("bad","Validate failed: "+esc(e.message)); return; }
+  if(res && res.ok){
+    try{ ed.value = JSON.stringify(res.config, null, 2); }catch(e){}
+    nlValidConfig = res.config;
+    const warns = (res.warnings||[]).concat((res.lint && res.lint.warnings)||[]);
+    nlSetMsg("ok","Valid ✓ "+(warns.length ? ("— warnings: "+warns.join("; ")) : "— ready to Save."));
+    document.getElementById("nlSave").disabled=false;
+  } else {
+    nlValidConfig=null; document.getElementById("nlSave").disabled=true;
+    const errs = (res && (res.errors || [res.error])) || ["invalid config"];
+    nlSetMsg("bad","Invalid: "+errs.filter(Boolean).join("; "));
+  }
+}
+async function nlSave(){
+  if(!nlValidConfig){ nlSetMsg("bad","Validate a config first."); return; }
+  nlSetMsg("info","Saving…");
+  let res; try{ res = await api("/api/loops/save",
+      {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({config:nlValidConfig})}); }
+  catch(e){ nlSetMsg("bad","Save failed: "+esc(e.message)); return; }
+  if(res && res.ok){
+    nlSetMsg("ok","Saved loop “"+esc(res.name||nlValidConfig.name||"")+"” ✓ — open it from the Loops dashboard to run it.");
+  } else {
+    const errs = (res && (res.errors || [res.error])) || ["save failed"];
+    nlSetMsg("bad","Save failed: "+errs.filter(Boolean).join("; "));
+  }
+}
+function bindNewLoop(){
+  const a=document.getElementById("nlApply");    if(a) a.onclick=nlApplyFromTerminal;
+  const v=document.getElementById("nlValidate"); if(v) v.onclick=nlValidate;
+  const s=document.getElementById("nlSave");     if(s) s.onclick=nlSave;
+  const ed=document.getElementById("nlEditor");  if(ed) ed.oninput=()=>{
+    nlValidConfig=null; const sv=document.getElementById("nlSave"); if(sv) sv.disabled=true;
+  };
+  const rt=document.getElementById("nlRuntime"); if(rt) rt.onchange=()=>{
+    if(page==="newloop"){ stopNewLoop(); startNewLoop(); }   // relaunch on the chosen runtime
+  };
+}
+bindNewLoop();
+window.addEventListener("beforeunload", ()=>{ if(nlWS){ try{nlWS.close();}catch(e){} } });
+
+/* ---------- boot ---------- */
+renderSelect();
+/* ---------- cloud (context-cloud settings + monitoring, board 890a17d8;
+   spec coord_core/CONTEXT_CLOUD.md s7: no invisible constants — every knob
+   editable per project, applies on the NEXT turn with no restart) ---------- */
+async function loadCloud(){
+  const el = document.getElementById("cloudBody");
+  el.innerHTML = '<div class="empty">Loading…</div>';
+  try{
+    const [cfg, st] = await Promise.all([
+      api(`/api/project/${active}/cloud-config`),
+      api(`/api/project/${active}/cloud-status`),
+    ]);
+    renderCloud(cfg, st);
+  }catch(e){ el.innerHTML = '<div class="err">Cloud API unavailable: '+esc(e.message)+'</div>'; }
+}
+function renderCloud(cfg, st){
+  const el = document.getElementById("cloudBody");
+  const sh = st.shadow||{};
+  const bs = sh.by_source||{};
+  let mon = '<div class="ovcard"><h3>Shadow monitoring</h3>';
+  if(sh.error){ mon += `<div class="err">${esc(sh.error)}</div>`; }
+  else{
+    mon += `<div class="statrow">` +
+      Object.entries(bs).map(([s,n])=>`<div class="stat"><div class="n">${n}</div><div class="l">${esc(s)}</div></div>`).join('') +
+      `<div class="stat"><div class="n">${sh.staged_open??0}</div><div class="l">Staged open</div></div>` +
+      `<div class="stat"><div class="n">${sh.staged_oldest_age_s?Math.round(sh.staged_oldest_age_s/60)+"m":"—"}</div><div class="l">Oldest staged</div></div>` +
+      `</div>`;
+  }
+  const rc = st.receipts||[];
+  if(rc.length){
+    mon += '<h3 style="margin-top:16px">Last turn receipts</h3><div class="doing">' +
+      rc.map(r=>`<div class="item"><span class="t">${esc(r.mode||r.source||'—')}</span>` +
+        `<span>${(r.context_tokens||0).toLocaleString()} tok` +
+        `${r.weighted_cost!=null?` · <b>${Math.round(r.weighted_cost).toLocaleString()} wtok</b>`:''}` +
+        ` · ${r.duration_s??'—'}s${r.carrier?` · ${esc(r.carrier)}`:''}` +
+        `${r.gap_s!=null?` · gap ${Math.round(r.gap_s)}s`:''}</span>` +
+        `<span class="when">${fmtWhen(r.ts)}</span></div>`).join('') + '</div>';
+  }
+  mon += '</div>';
+  const eff = cfg.effective||{}, defs = cfg.defaults||{}, stored = cfg.stored||{};
+  let set = '<div class="ovcard"><h3>Cloud settings — apply on the next turn, no restart</h3><div class="cloudgrid">';
+  Object.keys(defs).sort().forEach(k=>{
+    const v = eff[k], d = defs[k];
+    const isNum = typeof d === "number";
+    const overridden = (k in stored) && String(stored[k])!==String(d);
+    set += `<label class="ck${overridden?' ck-ov':''}"><span class="ck-k" title="default: ${esc(String(d))}">${esc(k)}${overridden?' •':''}</span>` +
+      `<input class="ck-v" data-key="${esc(k)}" data-num="${isNum?1:0}" value="${esc(String(v))}"></label>`;
+  });
+  set += `</div><div class="hbctl" style="margin-top:12px"><button class="btn" id="ccSave">Save changed</button><span class="note" id="ccNote"></span></div></div>`;
+  el.innerHTML = mon + set;
+  document.getElementById("ccSave").onclick = async ()=>{
+    const body = {};
+    document.querySelectorAll("#cloudBody .ck-v").forEach(inp=>{
+      const k = inp.dataset.key, isNum = inp.dataset.num==="1";
+      if(inp.value!==String(eff[k])){ body[k] = isNum ? Number(inp.value) : inp.value; }
+    });
+    const note = document.getElementById("ccNote");
+    if(!Object.keys(body).length){ note.textContent = "Nothing changed."; return; }
+    note.textContent = "Saving…";
+    try{
+      await api(`/api/project/${active}/cloud-config`, {method:"POST",
+        headers:{"content-type":"application/json"}, body: JSON.stringify(body)});
+      note.textContent = "Saved — applies on the next turn.";
+      setTimeout(loadCloud, 800);
+    }catch(e){ note.textContent = "Save failed: "+e.message; }
+  };
+}
+
+renderPages();
+{
+  const {slug, pg, sub} = parsePath();
+  active = slug; page = pg; chatThread = sub;
+  history.replaceState({slug, pg, thread: sub}, "", urlFor(slug, pg));  // canonical
+  selectProject(slug, false);
+}
+window.addEventListener("popstate", ()=>{
+  const {slug, pg, sub} = parsePath();
+  page = pg; chatThread = sub;
+  selectProject(slug, false);   // re-renders (and re-points the iframe) WITHOUT pushing
+});
+
+// ── M1 (QoL R6): mobile sidebar drawer ──────────────────────────────────────
+// Off-canvas .side on phones. Desktop never calls these (hamburger is
+// display:none >760px). Picking a page, tapping the scrim, or Escape closes it.
+function _syncNavToggle(){const b=document.querySelector(".navtoggle");
+  if(b)b.setAttribute("aria-expanded",document.body.classList.contains("nav-open")?"true":"false");}
+function toggleNav(){document.body.classList.toggle("nav-open");_syncNavToggle();}
+function closeNav(){document.body.classList.remove("nav-open");_syncNavToggle();}
+(function(){
+  const side=document.getElementById("sideNav");
+  if(side)side.addEventListener("click",(e)=>{if(e.target.closest(".page"))closeNav();});
+  document.addEventListener("keydown",(e)=>{if(e.key==="Escape")closeNav();});
+})();
+
+// ── PWA (QoL R6 / M2): register the service worker ──────────────────────────
+// App-shell + static-asset caching only; the SW never caches /api/* or /ws/*,
+// so live data + the terminal WebSocket stay live. Fails soft on any error.
+if("serviceWorker" in navigator){
+  addEventListener("load",function(){
+    navigator.serviceWorker.register("/sw.js").catch(function(){});
+  });
+}
+</script>
+</body>
+</html>

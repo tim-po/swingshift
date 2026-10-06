@@ -1,0 +1,46 @@
+# Loopyard project registry — TEMPLATE.
+#
+# The real file is config/projects.toml, which is INSTANCE-LOCAL and gitignored
+# (403e5f7d). Copy this to get started, or just run install.sh — it writes an empty
+# registry when none exists. The swarm CLI and the dashboard append entries for you.
+#
+# WHY THIS IS NOT TRACKED. It used to be, and that was a silent-corruption bug: the
+# registry describes THIS box (which projects live here, which repo paths, which
+# Telegram chats), so a tracked copy meant one host's project list shipped to every
+# other host on a git pull. Rolling canonical to anneke would quietly repoint it at
+# this host's projects — repos it does not have, chats it must not post to — and
+# nothing would fail loudly; the wrong config just becomes the config. Same class as
+# secrets.toml and auth.toml, which were gitignored from the start.
+#
+# Every field below except `slug` has a sane default; delete what you do not need.
+
+[projects.example]
+slug = "example"                       # must match the table name
+display_name = "Example Project"
+repo_path = "/home/you/example"        # where the code actually lives on THIS box
+deploy_branch = "main"
+master_branch = "main"
+prod_url = ""
+staging_url = ""
+dev_url = "http://localhost:3000"
+deploy_targets = []                    # e.g. ["staging"]
+
+# Telegram wiring. tg_chat is the chat the project talks in ("0" = none).
+tg_chat = "0"
+
+# tg_enabled turns on the OLD conversational bot brain in the worker. Leave it FALSE
+# for anything driven by a loop coordinator (coord_*/run_coord_*.py): the coordinator
+# polls that bot's getUpdates itself, and both polling the same bot would race —
+# getUpdates hands each update to exactly one consumer, so they would eat each
+# other's messages at random.
+tg_enabled = false
+
+# tg_authz = true restricts who the bot will answer.
+tg_authz = true
+
+# Optional: ingest/track other chats this project cares about.
+# [projects.example.tg_tracking]
+# enabled = true
+# mode = "include"          # include = only the chats listed below
+# chats = [123456789]
+# realtime = [123456789]    # processed on arrival rather than batched

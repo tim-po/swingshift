@@ -1,0 +1,15 @@
+/* ⋯ menu — secondary row actions. Tokens only. */
+.mm { position: relative; flex: none; }
+/* A list that hosts a menu must not clip its popover. */
+.rows:has(.mm) { overflow: visible; }
+.rows:has(.mm) > :first-child { border-top-left-radius: var(--r-lg); border-top-right-radius: var(--r-lg); }
+.rows:has(.mm) > :last-child { border-bottom-left-radius: var(--r-lg); border-bottom-right-radius: var(--r-lg); }
+.mm-btn { width: 28px; padding: 0; }
+.mm-pop { position: absolute; right: 0; top: calc(100% + var(--sp-1)); z-index: 30; min-width: 176px; display: flex; flex-direction: column;
+  padding: var(--sp-1); background: var(--surface-2); border-radius: var(--r); box-shadow: var(--shadow-pop); }
+.mm-item { background: none; border: 0; text-align: left; padding: var(--sp-2) var(--sp-3); border-radius: var(--r-xs); color: var(--text-2);
+  font-size: var(--fs-sm); cursor: pointer; }
+.mm-item:hover, .mm-item:focus-visible { background: var(--hover); color: var(--text); }
+.mm-item.danger { color: var(--bad); }
+.mm-item.danger:hover { background: var(--bad-tint); }
+.mm-item:disabled { opacity: 0.45; cursor: not-allowed; }

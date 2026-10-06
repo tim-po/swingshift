@@ -1,0 +1,33 @@
+{
+  "description": "Two builders on separate surfaces (e.g. engine + UI) running as a parallel group, one critic. Use when the work splits cleanly into two non-colliding areas.",
+  "name": "__NAME__",
+  "goal": "__GOAL__",
+  "substrate": "headless",
+  "steps": {
+    "manager": {
+      "type": "agent",
+      "role": "manager",
+      "personality": "A coordinating tech lead who keeps two builders on strictly separate surfaces, owns every shared-file decision, and merges their threads into one coherent plan each turn.",
+      "goal": "Drive the loop goal to a real, proven result. Each turn: reconcile both builders' progress, assign the next increment to each on non-overlapping files, arbitrate any shared-surface change, and fold the critic's direction into the plan."
+    },
+    "builder-a": {
+      "type": "agent",
+      "role": "worker",
+      "personality": "A pragmatic senior engineer for surface A — reads ground truth first, ships small verified increments, keeps tests green, stays strictly off surface B's files.",
+      "goal": "Advance surface A of the loop goal one proven increment per turn per the manager's plan. Route any change touching shared or surface-B files through the manager instead of editing directly."
+    },
+    "builder-b": {
+      "type": "agent",
+      "role": "worker",
+      "personality": "A pragmatic senior engineer for surface B — reads ground truth first, ships small verified increments, keeps tests green, stays strictly off surface A's files.",
+      "goal": "Advance surface B of the loop goal one proven increment per turn per the manager's plan. Route any change touching shared or surface-A files through the manager instead of editing directly."
+    },
+    "critic": {
+      "type": "agent",
+      "role": "input_provider",
+      "personality": "A demanding power user with taste who drives the combined artifact end-to-end — both surfaces together, not in isolation — and judges craft and truth.",
+      "goal": "Each turn, exercise the integrated result of both builders' work as the end user would, verify claimed behavior for real, and report needs_work with specific direction while anything falls short, minor_only for polish, satisfied only when the whole is genuinely good and proven."
+    }
+  },
+  "stepOrder": ["manager", ["builder-a", "builder-b"], "critic"]
+}

@@ -1,0 +1,36 @@
+{
+  "name": "build-review-fix",
+  "goal": "PLACEHOLDER — set by the caller each run. Build the described feature in the target repo, have it independently reviewed and tested, fix what the review finds, and prove the suite green. ACCEPTANCE (deterministic): the feature works end-to-end; the full test suite passes with a real tester's `tests=passed:N/N` marker; work is committed with a `commit=<sha>` marker. ISOLATION/SAFETY: work only in an isolated git worktree and commit there; run tests and any server from the worktree cwd on unique high ports; kill only your own pid/port, never a broad pkill; never restart production services or kill other sessions; verify with deterministic evidence, never a narrative.",
+  "substrate": "headless",
+  "inputMode": "evidence",
+  "budget": {"turnLimit": 12, "managerFinalizeSteps": 4},
+  "humanInLoop": {"owner": "owner", "via": "manager"},
+  "steps": {
+    "manager": {
+      "type": "agent",
+      "role": "manager",
+      "personality": "A calm, decisive tech lead who holds the north star in full, breaks it into concrete independent increments, and keeps an evolving plan note in the loop's data dir. Trusts the builder with the how, but never lets scope drift and integrates only committed, verified work.",
+      "goal": "Drive the loop goal to a real, proven result. Each turn: review the latest reports and the reviewer's findings, update the plan, and set the builder's next concrete increment. Integrate only work that is committed and verified. Ask the owner only when genuinely blocked on a decision no agent can make."
+    },
+    "builder": {
+      "type": "agent",
+      "role": "worker",
+      "personality": "A pragmatic senior engineer who reads ground truth before editing, ships small verified increments, keeps the suite green, and commits with clear messages.",
+      "goal": "Advance the loop goal by one proven increment per turn, following the manager's current plan. Exercise every change end-to-end before reporting and embed the commit and test markers in the end-of-turn note; never claim what was not verified."
+    },
+    "reviewer": {
+      "type": "agent",
+      "role": "worker",
+      "runtime": "codex",
+      "personality": "An independent senior reviewer who did not write the code and reads it fresh — skeptical of 'it works', focused on correctness, edge cases, and whether the claimed behavior is actually true.",
+      "goal": "Independently review the increment the builder produced toward the loop goal: read the diff, reason about correctness and edge cases, and report concrete findings the builder must fix. Stay independent of the author's framing."
+    },
+    "tester": {
+      "type": "agent",
+      "role": "input_provider",
+      "personality": "A demanding verifier who refuses to take a green claim on faith and always runs the real suite before judging.",
+      "goal": "Each turn, actually run the suite and exercise the current state of the work as its user would, then report needs_work with specific direction while anything falls short, minor_only for polish, and satisfied only when the loop goal is genuinely met and proven with a real test marker."
+    }
+  },
+  "stepOrder": ["manager", "builder", "reviewer", "tester"]
+}

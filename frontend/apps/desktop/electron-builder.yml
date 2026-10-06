@@ -1,0 +1,62 @@
+# electron-builder config for the Loopyard macOS shell.
+# The real .app packaging + notarization is run BY THE OWNER on macOS
+# (`npm run dist:mac`); this file defines the target so that build is one command.
+appId: com.loopyard.desktop
+productName: Loopyard
+copyright: Loopyard
+
+directories:
+  output: dist-app
+  buildResources: build
+
+# Ship only the shell; never node_modules sources or the web src. The web UI is
+# NOT bundled as files (R18): the window loads http://127.0.0.1:<dash-port>/app/
+# from the running yard, whose code copy carries the built web app (B-3).
+files:
+  - main.js
+  - preload.js
+  - originAgent.mjs
+  - codeCopy.mjs
+  - yardSeams.mjs
+  - prereqs.mjs
+  - prereqSeams.mjs
+  - hubPeek.mjs
+  - guide.mjs
+  - boot.mjs
+  - updateCheck.mjs
+  - guidePreload.js
+  - connect.html
+  - guide.html
+  - package.json
+
+mac:
+  category: public.app-category.developer-tools
+  # B-8: one file per arch, so the arm64 and x64 dmg/zip never overwrite each other
+  # (Loopyard-0.1.0-arm64.dmg, Loopyard-0.1.0-x64.dmg, …).
+  artifactName: ${productName}-${version}-${arch}.${ext}
+  # arch lives INSIDE each target in electron-builder 25 (NOT a sibling of `target`).
+  # Both Apple-silicon and Intel Macs.
+  target:
+    - target: dmg
+      arch: [arm64, x64]
+    - target: zip
+      arch: [arm64, x64]
+  # Closed beta = AD-HOC signed ('-'): no Apple Developer ID, but a valid ad-hoc
+  # signature, which Apple-silicon Macs require to launch at all (an unsigned arm64
+  # app is "damaged"). Testers still right-click -> Open once (Gatekeeper: unnotarized).
+  # For future notarization: set hardenedRuntime: true and a Developer ID identity.
+  identity: '-'
+  gatekeeperAssess: false
+  # The origin bundle's read-only code tree (PHASE-B-SPEC §1.9, D12) →
+  # Contents/Resources/loopyard, so bin/yard is at <resourcesPath>/loopyard/bin/yard.
+  # scripts/stage-origin.mjs (run by dist:mac) unpacks dist/loopyard-origin-macos-<slug>.tar.gz
+  # into the REPO-ROOT dist/origin-mac-<x64|arm64>; `from` is relative to this dir
+  # (frontend/apps/desktop), so ../../../dist is that same repo-root dist/.
+  extraResources:
+    - from: ../../../dist/origin-mac-${arch}
+      to: loopyard
+  # No `icon:` yet -> electron-builder uses the default Electron icon. Drop a real
+  # build/icon.icns in later with zero other changes.
+
+dmg:
+  title: Loopyard

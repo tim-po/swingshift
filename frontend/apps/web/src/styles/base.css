@@ -1,0 +1,69 @@
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: var(--fw-regular) var(--fs-base)/var(--lh) var(--sans); letter-spacing: -0.006em;
+  -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility;
+}
+button, input, select, textarea { font: inherit; color: inherit; letter-spacing: inherit; }
+a { color: inherit; }
+::selection { background: var(--ember-tint); }
+:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; border-radius: var(--r-xs); }
+
+/* Scrollbars that recede. */
+* { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+
+/* ── text roles ── */
+.mono { font-family: var(--mono); font-size: 0.92em; letter-spacing: 0; }
+.h1 { font-family: var(--display); font-weight: var(--fw-display); font-size: var(--fs-xl); line-height: 1.1; letter-spacing: var(--ls-display); margin: 0; overflow-wrap: anywhere; }
+.h2 { font-weight: var(--fw-semi); font-size: var(--fs-lg); line-height: var(--lh-tight); letter-spacing: -0.016em; margin: 0; }
+.h3 { font-weight: var(--fw-semi); font-size: var(--fs-md); line-height: var(--lh-tight); letter-spacing: -0.01em; margin: 0; }
+/* Section label: typed onto the card — machine face, sentence case, never letter-spaced. */
+.kick { font-family: var(--machine); font-size: var(--fs-xs); font-weight: var(--fw-bold); letter-spacing: 0; text-transform: none; color: var(--text-3); }
+.kick.rose { color: var(--bad); } .kick.phos { color: var(--ok); } .kick.stone { color: var(--text-3); } .kick.ember { color: var(--ember-soft); }
+.sub { color: var(--text-3); font-size: var(--fs-sm); }
+.meta { color: var(--text-3); font-size: var(--fs-xs); display: flex; gap: var(--sp-2); flex-wrap: wrap; align-items: center; }
+.muted { color: var(--text-3); }
+.dotsep::before { content: '·'; margin-right: var(--sp-2); color: var(--text-4); }
+
+/* ── empty / zero states ── */
+.empty { color: var(--text-2); text-align: center; margin: var(--sp-16) auto 0; max-width: 420px; padding: 0 var(--sp-4);
+  font-size: var(--fs-base); display: flex; flex-direction: column; align-items: center; gap: var(--sp-3); }
+.empty > .kick { font-family: var(--display); font-size: var(--fs-lg); color: var(--text); font-weight: var(--fw-display); }
+.empty p { margin: 0; line-height: var(--lh-loose); color: var(--text-3); }
+.empty.err > .kick { color: var(--bad); }
+.eb-actions { display: flex; gap: var(--sp-2); flex-wrap: wrap; justify-content: center; }
+
+/* ── buttons ── */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); height: 32px; padding: 0 var(--sp-3);
+  border-radius: var(--r-sm); font-family: var(--sans); font-size: var(--fs-sm); font-weight: var(--fw-medium); white-space: nowrap;
+  cursor: pointer; text-decoration: none; border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--text);
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease); }
+.btn:hover { background: var(--surface-3); border-color: var(--line-strong); }
+.btn:active { background: var(--press); }
+/* `ghost` is the legacy name for the standard secondary button (= .btn). */
+.btn.quiet { background: transparent; border-color: transparent; color: var(--text-2); }
+.btn.quiet:hover { background: var(--hover); color: var(--text); }
+.btn.primary { background: var(--ember); color: var(--on-ember); border-color: transparent; font-weight: var(--fw-semi); }
+.btn.primary:hover { background: var(--ember-soft); }
+.btn.danger { color: var(--bad); }
+.btn.danger:hover { background: var(--bad-tint); border-color: var(--bad-line); }
+.btn.sm { height: 28px; padding: 0 var(--sp-2); font-size: var(--fs-xs); }
+.btn.lg { height: 40px; padding: 0 var(--sp-5); font-size: var(--fs-base); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn .ico { width: 16px; height: 16px; flex: none; }
+
+/* ── status badge (state) ── */
+/* Courier Prime is thin at 11px: badges are typed in its bold cut. */
+.badge { display: inline-flex; align-items: center; gap: 6px; font-family: var(--machine); font-size: var(--fs-2xs); font-weight: var(--fw-bold);
+  letter-spacing: 0; padding: 2px 8px 2px 7px; border-radius: var(--r-pill); white-space: nowrap; text-transform: none;
+  background: var(--surface-3); color: var(--text-2); }
+.badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+.b-running { background: var(--ok-tint); color: var(--ok); }
+.b-running::before { animation: pulse 1.6s ease-in-out infinite; }
+.b-waiting_owner { background: var(--warn-tint); color: var(--warn); }
+.b-needs_owner, .b-error, .b-guardian_stopped { background: var(--bad-tint); color: var(--bad); }
+.b-finished, .b-complete { background: var(--ok-tint); color: var(--ok); }
+.b-saved, .b-stopped, .b-stopping { background: var(--surface-3); color: var(--text-2); }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .b-running::before { animation: none; } }

@@ -1,0 +1,9 @@
+{
+  "id": "specs",
+  "name": "Specs",
+  "version": "1",
+  "entityKinds": ["spec"],
+  "dataDir": "specs",
+  "page": { "kind": "html", "asset": "page.html" },
+  "settings": {}
+}

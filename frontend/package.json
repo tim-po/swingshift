@@ -1,0 +1,16 @@
+{
+  "name": "loopyard-frontend",
+  "private": true,
+  "engines": {
+    "node": ">=20.19.0",
+    "npm": ">=10"
+  },
+  "workspaces": ["packages/*", "apps/*"],
+  "scripts": {
+    "dev": "npm run dev -w @loopyard/web",
+    "build": "npm run build -w @loopyard/web",
+    "test": "npm test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "shots": "npm run shots -w @loopyard/web"
+  }
+}
